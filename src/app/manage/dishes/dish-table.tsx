@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { createContext, useContext, useEffect, useState } from "react";
+import { ChangeEvent, createContext, useContext, useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,12 +26,13 @@ import AddDish from "@/app/manage/dishes/add-dish";
 import { useDeleteDishMutation, useGetListDishQuery } from "@/queries/useDish";
 import { toast } from "sonner";
 import useQueryParams from "@/hooks/useQueryParams";
-import { isUndefined, omitBy } from "lodash";
+import { debounce, isUndefined, omitBy } from "lodash";
 import useDebounceInput from "@/hooks/useDebounceInput";
 import { Tag } from "antd";
 import { Check } from "lucide-react";
 import { DishStatus } from "@/constants/type";
 import { Badge } from "@/components/ui/badge";
+import SelectCategory from "@/app/manage/dishes/SelectCategory";
 
 type DishItem = DishListResType["data"][0];
 
@@ -201,17 +202,24 @@ export default function DishTable() {
       page,
       limit,
       name: queryParams.name ? queryParams.name : undefined,
+      categoryId: queryParams.categoryId || undefined,
     },
-    isUndefined
+    isUndefined,
   ) as DishQueryType;
 
   useEffect(() => {
-    if (searchValue) {
-      router.push(`/manage/dishes?&page=1&limit=${limit}&name=${searchValue}`);
-    } else {
-      router.push(`/manage/dishes?page=1&limit=${limit}`);
-    }
-  }, [searchValue, router, limit]);
+    const params = new URLSearchParams(
+      Object.entries({
+        page: 1, // Reset về trang 1 khi search
+        limit,
+        categoryId: queryConfig.categoryId,
+        name: searchValue || undefined,
+      })
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    router.push(`/manage/dishes?${params.toString()}`);
+  }, [searchValue, limit, queryConfig.categoryId, router]);
 
   const [dishIdEdit, setDishIdEdit] = useState<number | undefined>();
   const [dishDelete, setDishDelete] = useState<DishItem | null>(null);
@@ -245,13 +253,15 @@ export default function DishTable() {
       <div className="w-full">
         <EditDish id={dishIdEdit} setId={setDishIdEdit} />
         <AlertDialogDeleteDish dishDelete={dishDelete} setDishDelete={setDishDelete} />
-        <div className="flex items-center py-4">
+        <div className="flex items-center gap-2 py-4">
           <Input
             placeholder="Lọc tên"
             value={searchName}
             onChange={(event) => setSearchName(event.target.value)}
             className="max-w-sm"
           />
+          <SelectCategory queryConfig={queryConfig} />
+
           <div className="ml-auto flex items-center gap-2">
             <AddDish />
           </div>

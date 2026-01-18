@@ -26,6 +26,7 @@ import { useUploadMutation } from "@/queries/useMedia";
 import { useGetDishDetailQuery, useUpdateDishMutation } from "@/queries/useDish";
 import { toast } from "sonner";
 import revalidateApiRequests from "@/apiRequests/revalidate";
+import { useGetListDishCategoryNameQuery } from "@/queries/useDishCategory";
 
 export default function EditDish({
   id,
@@ -36,6 +37,8 @@ export default function EditDish({
 }) {
   const dishDetail = useGetDishDetailQuery({ id: id as number, enabled: Boolean(id) });
   const dataDishDetail = dishDetail.data?.payload.data;
+  const listNameDishCategory = useGetListDishCategoryNameQuery();
+  const dishCategories = listNameDishCategory.data?.payload.data || [];
 
   const uploadMutation = useUploadMutation();
   const updateDishMutation = useUpdateDishMutation();
@@ -50,6 +53,7 @@ export default function EditDish({
       price: 0,
       image: undefined,
       status: DishStatus.Unavailable,
+      categoryId: undefined,
     },
   });
   const image = form.watch("image");
@@ -64,6 +68,7 @@ export default function EditDish({
         price: dataDishDetail.price,
         image: dataDishDetail.image,
         status: dataDishDetail.status,
+        categoryId: dataDishDetail.categoryId.toString(),
       });
     }
   }, [dataDishDetail, form]);
@@ -102,7 +107,7 @@ export default function EditDish({
         id: id as number,
         body: body,
       });
-      
+
       await revalidateApiRequests("dishes");
 
       toast.success(message, {
@@ -231,6 +236,36 @@ export default function EditDish({
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                      <Label htmlFor="categoryId">Danh mục</Label>
+                      <div className="col-span-3 w-full space-y-2">
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn danh mục" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {dishCategories.map((category) => (
+                              <SelectItem key={category.id} value={category.id.toString()}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="status"

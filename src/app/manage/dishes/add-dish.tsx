@@ -26,10 +26,13 @@ import { toast } from "sonner";
 import { useUploadMutation } from "@/queries/useMedia";
 import { useAddDishMutation } from "@/queries/useDish";
 import revalidateApiRequests from "@/apiRequests/revalidate";
+import { useGetListDishCategoryNameQuery } from "@/queries/useDishCategory";
 
 export default function AddDish() {
   const uploadMutation = useUploadMutation();
   const addDishMutation = useAddDishMutation();
+  const listNameDishCategory = useGetListDishCategoryNameQuery();
+  const dishCategories = listNameDishCategory.data?.payload.data || [];
 
   const [file, setFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
@@ -42,6 +45,7 @@ export default function AddDish() {
       price: 0,
       image: undefined,
       status: DishStatus.Unavailable,
+      categoryId: undefined,
     },
   });
   const image = form.watch("image");
@@ -101,7 +105,15 @@ export default function AddDish() {
   };
 
   return (
-    <Dialog onOpenChange={setOpen} open={open}>
+    <Dialog
+      onOpenChange={(val) => {
+        if (!val) {
+          reset();
+        }
+        setOpen(val);
+      }}
+      open={open}
+    >
       <DialogTrigger asChild>
         <Button size="sm" className="h-7 gap-1">
           <PlusCircle className="h-3.5 w-3.5" />
@@ -193,13 +205,14 @@ export default function AddDish() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="description">Mô tả sản phẩm</Label>
+                      <Label htmlFor="description">Mô tả món ăn</Label>
                       <div className="col-span-3 w-full space-y-2">
                         <Textarea id="description" className="w-full" {...field} />
                         <FormMessage />
@@ -208,15 +221,45 @@ export default function AddDish() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                      <Label htmlFor="categoryId">Danh mục</Label>
+                      <div className="col-span-3 w-full space-y-2">
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn danh mục" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {dishCategories.map((category) => (
+                              <SelectItem key={category.id} value={category.id.toString()}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="status"
                 render={({ field }) => (
                   <FormItem>
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="description">Trạng thái</Label>
+                      <Label htmlFor="status">Trạng thái</Label>
                       <div className="col-span-3 w-full space-y-2">
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Chọn trạng thái" />

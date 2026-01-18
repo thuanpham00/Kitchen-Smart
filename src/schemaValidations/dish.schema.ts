@@ -5,20 +5,11 @@ import z from "zod";
 export const DishQuery = BaseQuery.and(
   z.object({
     name: z.string().trim().max(256).optional(),
-  })
+    categoryId: z.string().optional(),
+  }),
 );
 
 export type DishQueryType = z.TypeOf<typeof DishQuery>;
-
-export const CreateDishBody = z.object({
-  name: z.string().min(1).max(256),
-  price: z.number().positive(),
-  description: z.string().max(10000),
-  image: z.string().url(),
-  status: z.enum(DishStatusValues).optional(),
-});
-
-export type CreateDishBodyType = z.TypeOf<typeof CreateDishBody>;
 
 export const DishSchema = z.object({
   id: z.number(),
@@ -51,8 +42,22 @@ export const DishListRes = z.object({
 
 export type DishListResType = z.TypeOf<typeof DishListRes>;
 
-export const UpdateDishBody = CreateDishBody;
-export type UpdateDishBodyType = CreateDishBodyType;
+export const CreateDishBody = z.object({
+  name: z.string().min(5).max(256),
+  price: z.number().positive(),
+  description: z.string().max(10000),
+  image: z.string().url(),
+  status: z.enum(DishStatusValues).optional(),
+  categoryId: z.string(),
+});
+
+export type CreateDishBodyType = z.TypeOf<typeof CreateDishBody>;
+
+export const UpdateDishBody = CreateDishBody.extend({
+  categoryId: z.string().optional(),
+});
+export type UpdateDishBodyType = z.TypeOf<typeof UpdateDishBody>;
+
 export const DishParams = z.object({
   id: z.coerce.number(),
 });

@@ -162,16 +162,21 @@ export default function TableTable() {
       limit,
       number: queryParams.number ? queryParams.number : undefined,
     },
-    isUndefined
+    isUndefined,
   ) as TableQueryType;
 
   useEffect(() => {
-    if (searchValue) {
-      router.push(`/manage/tables?number=${searchValue}&page=1&limit=${limit}`);
-    } else {
-      router.push(`/manage/tables?page=1&limit=${limit}`);
-    }
-  }, [searchValue, router, limit]);
+    const params = new URLSearchParams(
+      Object.entries({
+        page: 1, // Reset về trang 1 khi search
+        limit,
+        number: searchValue || undefined,
+      })
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    router.push(`/manage/tables?${params.toString()}`);
+  }, [searchValue, limit, router]);
 
   const [tableIdEdit, setTableIdEdit] = useState<number | undefined>();
   const [tableDelete, setTableDelete] = useState<TableItem | null>(null);

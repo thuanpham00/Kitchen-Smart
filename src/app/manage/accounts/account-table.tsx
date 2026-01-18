@@ -176,16 +176,21 @@ export default function AccountTable() {
       limit,
       email: queryParams.email ? queryParams.email : undefined,
     },
-    isUndefined
+    isUndefined,
   ) as AccountQueryType;
 
   useEffect(() => {
-    if (searchValue) {
-      router.push(`/manage/accounts?email=${searchValue}&page=1&limit=${limit}`);
-    } else {
-      router.push(`/manage/accounts?page=1&limit=${limit}`);
-    }
-  }, [searchValue, router, limit]);
+    const params = new URLSearchParams(
+      Object.entries({
+        page: 1, // Reset về trang 1 khi search
+        limit,
+        email: searchValue || undefined,
+      })
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    router.push(`/manage/accounts?${params.toString()}`);
+  }, [searchValue, limit, router]);
 
   const [employeeIdEdit, setEmployeeIdEdit] = useState<number | undefined>();
   const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(null);
@@ -200,7 +205,7 @@ export default function AccountTable() {
   const pagination = {
     pageIndex: queryConfig.page ? queryConfig.page - 1 : 0,
     pageSize: queryConfig.limit,
-  };
+  }; // chỉ chứa thông tin về trang hiện tại mà TanStack Table đang hiển thị.
 
   const table = useReactTable({
     data: dataAccount,

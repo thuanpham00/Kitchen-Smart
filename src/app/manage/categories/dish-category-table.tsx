@@ -27,15 +27,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
 import { useDeleteDishMutation, useGetListDishQuery } from "@/queries/useDish";
 import { toast } from "sonner";
 import AddDishCategory from "@/app/manage/categories/add-dish-category";
 import EditDishCategory from "@/app/manage/categories/edit-dish-category";
-import { useGetListDishCategoryQuery } from "@/queries/useDishCategory";
-import { DishCategoryListResType } from "@/schemaValidations/dishCategory.schema";
+import { useDeleteDishCategoryMutation, useGetListDishCategoryQuery } from "@/queries/useDishCategory";
+import { DishCategoryListResType, DishCategoryQueryType } from "@/schemaValidations/dishCategory.schema";
 import { Eye } from "lucide-react";
+import useQueryParams from "@/hooks/useQueryParams";
+import useDebounceInput from "@/hooks/useDebounceInput";
+import { isUndefined, omitBy } from "lodash";
+import Link from "next/link";
+import { handleErrorApi } from "@/lib/utils";
 
 type DishCategoryItem = DishCategoryListResType["data"][0];
 
@@ -78,9 +83,9 @@ export const columns: ColumnDef<DishCategoryItem>[] = [
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         {row.getValue("countDish")}
-        <Button variant={"ghost"}>
+        <Link href={`/manage/dishes?categoryId=${row.original.id}`} className="text-blue-500 hover:underline">
           <Eye />
-        </Button>
+        </Link>
       </div>
     ),
   },
@@ -110,24 +115,30 @@ export const columns: ColumnDef<DishCategoryItem>[] = [
   },
 ];
 
-function AlertDialogDeleteDish({
+function AlertDialogDeleteDishCategory({
   dishCategoryDelete,
   setDishCategoryDelete,
 }: {
   dishCategoryDelete: DishCategoryItem | null;
   setDishCategoryDelete: (value: DishCategoryItem | null) => void;
 }) {
-  const deleteDishMutation = useDeleteDishMutation();
+  const deleteDishCategoryMutation = useDeleteDishCategoryMutation();
 
   const handleDelete = async () => {
     if (dishCategoryDelete) {
-      const {
-        payload: { message },
-      } = await deleteDishMutation.mutateAsync(dishCategoryDelete.id);
-      toast.success(message, {
-        duration: 2000,
-      });
-      setDishCategoryDelete(null);
+      try {
+        const {
+          payload: { message },
+        } = await deleteDishCategoryMutation.mutateAsync(dishCategoryDelete.id);
+        toast.success(message, {
+          duration: 2000,
+        });
+        setDishCategoryDelete(null);
+      } catch (error) {
+        handleErrorApi({
+          errors: error,
+        });
+      }
     }
   };
 
@@ -142,9 +153,9 @@ function AlertDialogDeleteDish({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Xóa món ăn?</AlertDialogTitle>
+          <AlertDialogTitle>Xóa danh mục?</AlertDialogTitle>
           <AlertDialogDescription>
-            Món{" "}
+            Danh mục{" "}
             <span className="bg-foreground text-primary-foreground rounded px-1">
               {dishCategoryDelete?.name}
             </span>{" "}
@@ -159,55 +170,63 @@ function AlertDialogDeleteDish({
     </AlertDialog>
   );
 }
-// Số lượng item trên 1 trang
-const PAGE_SIZE = 10;
 export default function DishCategoryTable() {
-  const searchParam = useSearchParams();
-  const page = searchParam.get("page") ? Number(searchParam.get("page")) : 1;
-  const pageIndex = page - 1;
+  const router = useRouter();
+  const queryParams = useQueryParams();
+
+  const [searchName, setSearchName] = useState<string>(queryParams.name || "");
+  const searchValue = useDebounceInput({ value: searchName, delay: 1000 });
+
+  const limit = queryParams.limit ? Number(queryParams.limit) : 5;
+  const page = queryParams.page ? Number(queryParams.page) : 1;
+
+  const queryConfig: DishCategoryQueryType = omitBy(
+    {
+      page,
+      limit,
+      name: queryParams.name ? queryParams.name : undefined,
+    },
+    isUndefined,
+  ) as DishCategoryQueryType;
+
+  useEffect(() => {
+    const params = new URLSearchParams(
+      Object.entries({
+        page: 1, // Reset về trang 1 khi search
+        limit,
+        name: searchValue || undefined,
+      })
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    router.push(`/manage/categories?${params.toString()}`);
+  }, [searchValue, limit, router]);
+
   const [dishCategoryIdEdit, setDishCategoryIdEdit] = useState<number | undefined>();
   const [dishCategoryDelete, setDishCategoryDelete] = useState<DishCategoryItem | null>(null);
 
-  const listDishCategory = useGetListDishCategoryQuery();
+  const listDishCategory = useGetListDishCategoryQuery(queryConfig);
   const data: DishCategoryListResType["data"] = listDishCategory.data?.payload.data || [];
+  const currentPage = listDishCategory.data?.payload.pagination.page || 0; // trang hiện tại
+  const totalPages = listDishCategory.data?.payload.pagination.totalPages || 0; // tổng số trang
+  const total = listDishCategory.data?.payload.pagination.total || 0; // tổng số item
 
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-  const [pagination, setPagination] = useState({
-    pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
-    pageSize: PAGE_SIZE, //default page size
-  });
+  const pagination = {
+    pageIndex: queryConfig.page ? queryConfig.page - 1 : 0,
+    pageSize: queryConfig.limit,
+  };
 
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    manualPagination: true, // phân trang thủ công
+    manualFiltering: true, // filter thủ công
+    manualSorting: true, // sort thủ công
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    autoResetPageIndex: false,
     state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
       pagination,
     },
   });
-
-  useEffect(() => {
-    table.setPagination({
-      pageIndex,
-      pageSize: PAGE_SIZE,
-    });
-  }, [table, pageIndex]);
 
   return (
     <DishCategoryTableContext.Provider
@@ -215,15 +234,15 @@ export default function DishCategoryTable() {
     >
       <div className="w-full">
         <EditDishCategory id={dishCategoryIdEdit} setId={setDishCategoryIdEdit} />
-        <AlertDialogDeleteDish
+        <AlertDialogDeleteDishCategory
           dishCategoryDelete={dishCategoryDelete}
           setDishCategoryDelete={setDishCategoryDelete}
         />
         <div className="flex items-center py-4">
           <Input
             placeholder="Lọc tên"
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
+            value={searchName}
+            onChange={(event) => setSearchName(event.target.value)}
             className="max-w-sm"
           />
           <div className="ml-auto flex items-center gap-2">
@@ -270,14 +289,14 @@ export default function DishCategoryTable() {
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
           <div className="text-xs text-muted-foreground py-4 flex-1 ">
-            Hiển thị <strong>{table.getPaginationRowModel().rows.length}</strong> trong{" "}
-            <strong>{data.length}</strong> kết quả
+            Hiển thị <strong>{data.length}</strong> trong <strong>{total}</strong> kết quả
           </div>
           <div>
             <AutoPagination
-              page={table.getState().pagination.pageIndex + 1}
-              pageSize={table.getPageCount()}
-              pathname="/manage/dishes"
+              queryConfig={queryConfig}
+              page={currentPage} // trang hiện tại
+              totalPages={totalPages} // tổng số trang
+              pathname="/manage/categories"
             />
           </div>
         </div>

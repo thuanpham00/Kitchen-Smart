@@ -8,7 +8,7 @@ export default function Dashboard() {
       <div className='space-y-2'>
         <Card x-chunk='dashboard-06-chunk-0'>
           <CardHeader>
-            <CardTitle>Tài khoản</CardTitle>
+            <CardTitle className='text-xl'>Tài khoản</CardTitle>
             <CardDescription>Quản lý tài khoản nhân viên</CardDescription>
           </CardHeader>
           <CardContent>

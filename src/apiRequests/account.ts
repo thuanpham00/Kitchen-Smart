@@ -11,6 +11,7 @@ import {
   UpdateEmployeeAccountBodyType,
   UpdateMeBodyType,
 } from "@/schemaValidations/account.schema";
+import { BaseQueryType } from "@/schemaValidations/util.schema";
 import http from "@/utils/http";
 import queryString from "query-string";
 
@@ -51,8 +52,8 @@ export const accountApiRequests = {
     );
   },
 
-  list: () => {
-    return http.get<AccountListResType>("/accounts");
+  list: (params: BaseQueryType) => {
+    return http.get<AccountListResType>(`/accounts?` + queryString.stringify(params));
   },
   addEmployee: (body: CreateEmployeeAccountBodyType) => {
     return http.post<AccountResType>("/accounts", body);

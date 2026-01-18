@@ -1,6 +1,15 @@
 import { Role } from "@/constants/type";
 import { LoginRes } from "@/schemaValidations/auth.schema";
+import { BaseQuery, PaginationRes } from "@/schemaValidations/util.schema";
 import z from "zod";
+
+export const AccountQuery = BaseQuery.and(
+  z.object({
+    email: z.string().trim().max(256).optional(),
+  })
+);
+
+export type AccountQueryType = z.TypeOf<typeof AccountQuery>;
 
 export const AccountSchema = z.object({
   id: z.number(),
@@ -15,6 +24,7 @@ export type AccountType = z.TypeOf<typeof AccountSchema>;
 export const AccountListRes = z.object({
   data: z.array(AccountSchema),
   message: z.string(),
+  pagination: PaginationRes,
 });
 
 export type AccountListResType = z.TypeOf<typeof AccountListRes>;

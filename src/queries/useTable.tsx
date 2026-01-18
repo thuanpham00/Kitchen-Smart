@@ -1,12 +1,12 @@
 import { tableApiRequests } from "@/apiRequests/table";
-import { CreateTableBodyType, UpdateTableBodyType } from "@/schemaValidations/table.schema";
+import { CreateTableBodyType, TableQueryType, UpdateTableBodyType } from "@/schemaValidations/table.schema";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useGetListTableQuery = () => {
+export const useGetListTableQuery = (params: TableQueryType) => {
   return useQuery({
-    queryKey: ["tables"],
+    queryKey: ["tables", params],
     queryFn: () => {
-      return tableApiRequests.list();
+      return tableApiRequests.list(params);
     },
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5, // 5 minutes

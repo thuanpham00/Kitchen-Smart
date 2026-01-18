@@ -9,13 +9,15 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
+import { AccountQueryType } from "@/schemaValidations/account.schema";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 interface Props {
   page: number;
-  pageSize: number;
+  totalPages: number;
   pathname?: string;
   isLink?: boolean;
   onClick?: (pageNumber: number) => void;
+  queryConfig?: AccountQueryType;
 }
 
 /**
@@ -42,11 +44,12 @@ Với range = 2 áp dụng cho khoảng cách đầu, cuối và xung quanh curr
 const RANGE = 2;
 export default function AutoPagination({
   page,
-  pageSize,
+  totalPages,
   pathname = "/",
   isLink = true,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onClick = (pageNumber) => {},
+  queryConfig,
 }: Props) {
   const renderPagination = () => {
     let dotAfter = false;
@@ -75,21 +78,21 @@ export default function AutoPagination({
       }
       return null;
     };
-    return Array(pageSize)
+    return Array(totalPages)
       .fill(0)
       .map((_, index) => {
         const pageNumber = index + 1;
 
         // Điều kiện để return về ...
-        if (page <= RANGE * 2 + 1 && pageNumber > page + RANGE && pageNumber < pageSize - RANGE + 1) {
+        if (page <= RANGE * 2 + 1 && pageNumber > page + RANGE && pageNumber < totalPages - RANGE + 1) {
           return renderDotAfter(index);
-        } else if (page > RANGE * 2 + 1 && page < pageSize - RANGE * 2) {
+        } else if (page > RANGE * 2 + 1 && page < totalPages - RANGE * 2) {
           if (pageNumber < page - RANGE && pageNumber > RANGE) {
             return renderDotBefore(index);
-          } else if (pageNumber > page + RANGE && pageNumber < pageSize - RANGE + 1) {
+          } else if (pageNumber > page + RANGE && pageNumber < totalPages - RANGE + 1) {
             return renderDotAfter(index);
           }
-        } else if (page >= pageSize - RANGE * 2 && pageNumber > RANGE && pageNumber < page - RANGE) {
+        } else if (page >= totalPages - RANGE * 2 && pageNumber > RANGE && pageNumber < page - RANGE) {
           return renderDotBefore(index);
         }
         return (
@@ -99,6 +102,7 @@ export default function AutoPagination({
                 href={{
                   pathname,
                   query: {
+                    ...queryConfig,
                     page: pageNumber,
                   },
                 }}
@@ -130,6 +134,7 @@ export default function AutoPagination({
               href={{
                 pathname,
                 query: {
+                  ...queryConfig,
                   page: page - 1,
                 },
               }}
@@ -166,14 +171,15 @@ export default function AutoPagination({
               href={{
                 pathname,
                 query: {
+                  ...queryConfig,
                   page: page + 1,
                 },
               }}
               className={cn({
-                "cursor-not-allowed": page === pageSize,
+                "cursor-not-allowed": page === totalPages,
               })}
               onClick={(e) => {
-                if (page === pageSize) {
+                if (page === totalPages) {
                   e.preventDefault();
                 }
               }}
@@ -183,12 +189,12 @@ export default function AutoPagination({
               className={cn("w-8 h-8 p-0")}
               onClick={(e) => {
                 onClick(page + 1);
-                if (page === pageSize) {
+                if (page === totalPages) {
                   e.preventDefault();
                 }
               }}
               variant={"ghost"}
-              disabled={page === pageSize}
+              disabled={page === totalPages}
             >
               <ChevronRight className="w-5 h-5" />
             </Button>

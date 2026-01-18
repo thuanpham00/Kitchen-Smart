@@ -1,25 +1,25 @@
 import { dishApiRequests } from "@/apiRequests/dish";
-import { CreateDishBodyType, UpdateDishBodyType } from "@/schemaValidations/dish.schema";
+import { CreateDishBodyType, DishQueryType, UpdateDishBodyType } from "@/schemaValidations/dish.schema";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useGetListDishQuery = () => {
+export const useGetListDishQuery = (params: DishQueryType) => {
   return useQuery({
-    queryKey: ["dishes"],
+    queryKey: ["dishes", params],
     queryFn: () => {
-      return dishApiRequests.list();
+      return dishApiRequests.list(params);
     },
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
-export const useGetDishDetailQuery = ({ id, enabled }: { id: number, enabled: boolean }) => {
+export const useGetDishDetailQuery = ({ id, enabled }: { id: number; enabled: boolean }) => {
   return useQuery({
     queryKey: ["dish-detail", id],
     queryFn: () => {
       return dishApiRequests.getDishById(id);
     },
-    enabled
+    enabled,
   });
 };
 

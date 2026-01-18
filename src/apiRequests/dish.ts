@@ -1,10 +1,12 @@
 import {
   CreateDishBodyType,
   DishListResType,
+  DishQueryType,
   DishResType,
   UpdateDishBodyType,
 } from "@/schemaValidations/dish.schema";
 import http from "@/utils/http";
+import queryString from "query-string";
 
 export const dishApiRequests = {
   // note Next.js 15 mặc định fetch là { cache: "auto-no-cache" } // ko ảnh hưởng static hay dynamic rendering
@@ -14,8 +16,8 @@ export const dishApiRequests = {
     - Dùng cache: 'no-store': Không cache khi build. Bắt buộc page thành dynamic rendering
     - Dùng cache: 'force-cache: Cache khi build. Có thể khiến page thành Static Rendering nếu các điều kiện xung quanh cho phép (ví dụ không dùng dynamic function như cookies()...)
    */
-  list: () => {
-    return http.get<DishListResType>("/dishes", {
+  list: (params: DishQueryType) => {
+    return http.get<DishListResType>("/dishes?" + queryString.stringify(params), {
       next: {
         tags: ["dishes"],
       },

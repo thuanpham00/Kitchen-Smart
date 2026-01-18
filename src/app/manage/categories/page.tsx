@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import DishTable from "@/app/manage/dishes/dish-table";
 import { Suspense } from "react";
+import DishCategoryTable from "@/app/manage/categories/dish-category-table";
 
 export default function DishesPage() {
   return (
@@ -8,13 +8,13 @@ export default function DishesPage() {
       <div className="space-y-2">
         <Card x-chunk="dashboard-06-chunk-0">
           <CardHeader>
-            <CardTitle className="text-xl">Món ăn</CardTitle>
-            <CardDescription>Quản lý món ăn</CardDescription>
+            <CardTitle className="text-xl">Danh mục món ăn</CardTitle>
+            <CardDescription>Quản lý danh mục món ăn</CardDescription>
           </CardHeader>
           <CardContent>
-            <Suspense> 
+            <Suspense>
               {/* ngăn lỗi useSearchParams nên dùng Suspense */}
-              <DishTable />
+              <DishCategoryTable />
             </Suspense>
           </CardContent>
         </Card>

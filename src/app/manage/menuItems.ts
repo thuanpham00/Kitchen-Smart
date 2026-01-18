@@ -1,4 +1,4 @@
-import { Home, ShoppingCart, Users2, Salad, Table } from "lucide-react";
+import { Home, ShoppingCart, Users2, Salad, Table, CookingPot, List } from "lucide-react";
 
 const menuItems = [
   {
@@ -20,6 +20,16 @@ const menuItems = [
     title: "Món ăn",
     Icon: Salad,
     href: "/manage/dishes",
+  },
+  {
+    title: "Danh mục món",
+    Icon: List,
+    href: "/manage/categories",
+  },
+  {
+    title: "Menu món ăn",
+    Icon: CookingPot,
+    href: "/manage/menus",
   },
   {
     title: "Nhân viên",

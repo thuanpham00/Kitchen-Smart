@@ -382,9 +382,12 @@ export default function OrderTable() {
     }
 
     function onPayment(data: PayGuestOrdersResType["data"]) {
-      toast.success(`Khách hàng ${data[0].guest?.name} (bàn ${data[0].tableNumber}) thanh toán thành công ${data.length} đơn`, {
-        duration: 4000,
-      });
+      toast.success(
+        `Khách hàng ${data[0].guest?.name} (bàn ${data[0].tableNumber}) thanh toán thành công ${data.length} đơn`,
+        {
+          duration: 4000,
+        }
+      );
       refetchList();
     }
 

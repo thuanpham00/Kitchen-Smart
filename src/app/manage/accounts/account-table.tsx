@@ -1,34 +1,15 @@
+/* eslint-disable react-hooks/incompatible-library */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import { CaretSortIcon } from "@radix-ui/react-icons";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AccountListResType, AccountType } from "@/schemaValidations/account.schema";
+import { AccountListResType, AccountQueryType, AccountType } from "@/schemaValidations/account.schema";
 import AddEmployee from "@/app/manage/accounts/add-employee";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EditEmployee from "@/app/manage/accounts/edit-employee";
-import { createContext, use, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,10 +20,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useSearchParams } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
 import { useDeleteEmployeeMutation, useGetListEmployeeQuery } from "@/queries/useAccount";
 import { toast } from "sonner";
+import useQueryParams from "@/hooks/useQueryParams";
+import { isUndefined, omitBy } from "lodash";
+import useDebounceInput from "@/hooks/useDebounceInput";
+import { useRouter } from "next/navigation";
 
 type AccountItem = AccountListResType["data"][0];
 
@@ -88,14 +72,7 @@ export const columns: ColumnDef<AccountType>[] = [
   },
   {
     accessorKey: "email",
-    header: ({ column }) => {
-      return (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Email
-          <CaretSortIcon className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: "Email",
     cell: ({ row }) => <div className="lowercase">{row.getValue("email")}</div>,
   },
   {
@@ -118,7 +95,7 @@ export const columns: ColumnDef<AccountType>[] = [
           <Button
             size="sm"
             onClick={openDeleteEmployee}
-            disabled={row.original.role === "Owner" ? true : false}
+            disabled={row.original.role === "Owner"}
             className="bg-red-500 hover:bg-red-400 text-white"
           >
             Xóa
@@ -182,56 +159,60 @@ function AlertDialogDeleteAccount({
     </AlertDialog>
   );
 }
-// Số lượng item trên 1 trang
-const PAGE_SIZE = 10;
+
 export default function AccountTable() {
-  const searchParam = useSearchParams();
-  const page = searchParam.get("page") ? Number(searchParam.get("page")) : 1;
-  const pageIndex = page - 1;
-  // const params = Object.fromEntries(searchParam.entries())
+  const router = useRouter();
+  const queryParams = useQueryParams();
+
+  const [searchEmail, setSearchEmail] = useState<string>(queryParams.email || "");
+  const searchValue = useDebounceInput({ value: searchEmail, delay: 1000 });
+
+  const limit = queryParams.limit ? Number(queryParams.limit) : 5;
+  const page = queryParams.page ? Number(queryParams.page) : 1;
+
+  const queryConfig: AccountQueryType = omitBy(
+    {
+      page,
+      limit,
+      email: queryParams.email ? queryParams.email : undefined,
+    },
+    isUndefined
+  ) as AccountQueryType;
+
+  useEffect(() => {
+    if (searchValue) {
+      router.push(`/manage/accounts?email=${searchValue}&page=1&limit=${limit}`);
+    } else {
+      router.push(`/manage/accounts?page=1&limit=${limit}`);
+    }
+  }, [searchValue, router, limit]);
+
   const [employeeIdEdit, setEmployeeIdEdit] = useState<number | undefined>();
   const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(null);
 
-  const accountList = useGetListEmployeeQuery();
-  const data: AccountListResType["data"] = accountList.data?.payload.data || [];
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-  const [pagination, setPagination] = useState({
-    pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
-    pageSize: PAGE_SIZE, //default page size
-  });
+  const { data } = useGetListEmployeeQuery(queryConfig);
 
-  // eslint-disable-next-line react-hooks/incompatible-library
+  const dataAccount: AccountListResType["data"] = data?.payload.data || [];
+  const currentPage = data?.payload.pagination.page || 0; // trang hiện tại
+  const totalPages = data?.payload.pagination.totalPages || 0; // tổng số trang
+  const total = data?.payload.pagination.total || 0; // tổng số item
+
+  const pagination = {
+    pageIndex: queryConfig.page ? queryConfig.page - 1 : 0,
+    pageSize: queryConfig.limit,
+  };
+
   const table = useReactTable({
-    data,
+    data: dataAccount,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    manualPagination: true, // phân trang thủ công
+    manualFiltering: true, // filter thủ công
+    manualSorting: true, // sort thủ công
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    autoResetPageIndex: false,
     state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
       pagination,
     },
   });
-
-  useEffect(() => {
-    table.setPagination({
-      pageIndex,
-      pageSize: PAGE_SIZE,
-    });
-  }, [table, pageIndex]);
 
   return (
     <AccountTableContext.Provider
@@ -243,14 +224,15 @@ export default function AccountTable() {
         <div className="flex items-center py-4">
           <Input
             placeholder="Filter emails..."
-            value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => table.getColumn("email")?.setFilterValue(event.target.value)}
+            value={searchEmail}
+            onChange={(event) => setSearchEmail(event.target.value)}
             className="max-w-sm"
           />
           <div className="ml-auto flex items-center gap-2">
             <AddEmployee />
           </div>
         </div>
+
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -291,13 +273,13 @@ export default function AccountTable() {
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
           <div className="text-xs text-muted-foreground py-4 flex-1 ">
-            Hiển thị <strong>{table.getPaginationRowModel().rows.length}</strong> trong{" "}
-            <strong>{data.length}</strong> kết quả
+            Hiển thị <strong>{dataAccount.length}</strong> trong <strong>{total}</strong> kết quả
           </div>
           <div>
             <AutoPagination
-              page={table.getState().pagination.pageIndex + 1}
-              pageSize={table.getPageCount()}
+              queryConfig={queryConfig}
+              page={currentPage} // trang hiện tại
+              totalPages={totalPages} // tổng số trang
               pathname="/manage/accounts"
             />
           </div>

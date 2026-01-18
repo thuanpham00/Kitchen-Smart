@@ -1,14 +1,16 @@
 import {
   CreateTableBodyType,
   TableListResType,
+  TableQueryType,
   TableResType,
   UpdateTableBodyType,
 } from "@/schemaValidations/table.schema";
 import http from "@/utils/http";
+import queryString from "query-string";
 
 export const tableApiRequests = {
-  list: () => {
-    return http.get<TableListResType>("/tables");
+  list: (params: TableQueryType) => {
+    return http.get<TableListResType>("/tables?" + queryString.stringify(params));
   },
   addTable: (body: CreateTableBodyType) => {
     return http.post<TableResType>("/tables", body);

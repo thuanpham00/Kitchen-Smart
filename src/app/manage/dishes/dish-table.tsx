@@ -1,18 +1,7 @@
 /* eslint-disable react-hooks/incompatible-library */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -29,16 +18,33 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatCurrency, getVietnameseDishStatus } from "@/lib/utils";
-import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
-import { DishListResType } from "@/schemaValidations/dish.schema";
+import { DishListResType, DishQueryType } from "@/schemaValidations/dish.schema";
 import EditDish from "@/app/manage/dishes/edit-dish";
 import AddDish from "@/app/manage/dishes/add-dish";
 import { useDeleteDishMutation, useGetListDishQuery } from "@/queries/useDish";
-import { useDeleteEmployeeMutation } from "@/queries/useAccount";
 import { toast } from "sonner";
+import useQueryParams from "@/hooks/useQueryParams";
+import { isUndefined, omitBy } from "lodash";
+import useDebounceInput from "@/hooks/useDebounceInput";
+import { Tag } from "antd";
+import { Check } from "lucide-react";
+import { DishStatus } from "@/constants/type";
+import { Badge } from "@/components/ui/badge";
 
 type DishItem = DishListResType["data"][0];
+
+const getDishStatusColor = (status: (typeof DishStatus)[keyof typeof DishStatus]) => {
+  switch (status) {
+    case DishStatus.Available:
+      return "bg-green-500 text-white hover:bg-green-600";
+    case DishStatus.Unavailable:
+      return "bg-yellow-500 text-white hover:bg-yellow-600";
+    default:
+      return "bg-gray-500 text-white hover:bg-gray-600";
+  }
+};
 
 // sử dụng trong phạm vị component AccountTable và các component con của nó
 const DishTableContext = createContext<{
@@ -76,9 +82,26 @@ export const columns: ColumnDef<DishItem>[] = [
     cell: ({ row }) => <div className="capitalize">{row.getValue("name")}</div>,
   },
   {
+    accessorKey: "category",
+    header: "Danh mục",
+    cell: ({ row }) => {
+      const category = row.getValue("category") as { name: string };
+      return <div className="capitalize underline font-semibold">{category.name}</div>;
+    },
+  },
+  {
     accessorKey: "price",
     header: "Giá cả",
     cell: ({ row }) => <div className="capitalize">{formatCurrency(row.getValue("price"))}</div>,
+  },
+  {
+    accessorKey: "status",
+    header: "Trạng thái",
+    cell: ({ row }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const status = row.getValue("status") as any;
+      return <Badge className={getDishStatusColor(status)}>{getVietnameseDishStatus(status)}</Badge>;
+    },
   },
   {
     accessorKey: "description",
@@ -86,14 +109,9 @@ export const columns: ColumnDef<DishItem>[] = [
     cell: ({ row }) => (
       <div
         dangerouslySetInnerHTML={{ __html: row.getValue("description") }}
-        className="whitespace-pre-line"
+        className="whitespace-pre-line w-full max-w-75"
       />
     ),
-  },
-  {
-    accessorKey: "status",
-    header: "Trạng thái",
-    cell: ({ row }) => <div>{getVietnameseDishStatus(row.getValue("status"))}</div>,
   },
   {
     id: "actions",
@@ -167,55 +185,60 @@ function AlertDialogDeleteDish({
     </AlertDialog>
   );
 }
-// Số lượng item trên 1 trang
-const PAGE_SIZE = 10;
+
 export default function DishTable() {
-  const searchParam = useSearchParams();
-  const page = searchParam.get("page") ? Number(searchParam.get("page")) : 1;
-  const pageIndex = page - 1;
+  const router = useRouter();
+  const queryParams = useQueryParams();
+
+  const [searchName, setSearchName] = useState<string>(queryParams.name || "");
+  const searchValue = useDebounceInput({ value: searchName, delay: 1000 });
+
+  const limit = queryParams.limit ? Number(queryParams.limit) : 5;
+  const page = queryParams.page ? Number(queryParams.page) : 1;
+
+  const queryConfig: DishQueryType = omitBy(
+    {
+      page,
+      limit,
+      name: queryParams.name ? queryParams.name : undefined,
+    },
+    isUndefined
+  ) as DishQueryType;
+
+  useEffect(() => {
+    if (searchValue) {
+      router.push(`/manage/dishes?&page=1&limit=${limit}&name=${searchValue}`);
+    } else {
+      router.push(`/manage/dishes?page=1&limit=${limit}`);
+    }
+  }, [searchValue, router, limit]);
+
   const [dishIdEdit, setDishIdEdit] = useState<number | undefined>();
   const [dishDelete, setDishDelete] = useState<DishItem | null>(null);
 
-  const listDish = useGetListDishQuery();
-  const data: DishListResType["data"] = listDish.data?.payload.data || [];
+  const listDish = useGetListDishQuery(queryConfig);
 
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-  const [pagination, setPagination] = useState({
-    pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
-    pageSize: PAGE_SIZE, //default page size
-  });
+  const data: DishListResType["data"] = listDish.data?.payload.data || [];
+  const currentPage = listDish.data?.payload.pagination.page || 0; // trang hiện tại
+  const totalPages = listDish.data?.payload.pagination.totalPages || 0; // tổng số trang
+  const total = listDish.data?.payload.pagination.total || 0; // tổng số item
+
+  const pagination = {
+    pageIndex: queryConfig.page ? queryConfig.page - 1 : 0,
+    pageSize: queryConfig.limit,
+  };
 
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    manualPagination: true, // phân trang thủ công
+    manualFiltering: true, // filter thủ công
+    manualSorting: true, // sort thủ công
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    autoResetPageIndex: false,
     state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
       pagination,
     },
   });
-
-  useEffect(() => {
-    table.setPagination({
-      pageIndex,
-      pageSize: PAGE_SIZE,
-    });
-  }, [table, pageIndex]);
 
   return (
     <DishTableContext.Provider value={{ dishIdEdit, setDishIdEdit, dishDelete, setDishDelete }}>
@@ -225,8 +248,8 @@ export default function DishTable() {
         <div className="flex items-center py-4">
           <Input
             placeholder="Lọc tên"
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
+            value={searchName}
+            onChange={(event) => setSearchName(event.target.value)}
             className="max-w-sm"
           />
           <div className="ml-auto flex items-center gap-2">
@@ -273,13 +296,13 @@ export default function DishTable() {
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
           <div className="text-xs text-muted-foreground py-4 flex-1 ">
-            Hiển thị <strong>{table.getPaginationRowModel().rows.length}</strong> trong{" "}
-            <strong>{data.length}</strong> kết quả
+            Hiển thị <strong>{data.length}</strong> trong <strong>{total}</strong> kết quả
           </div>
           <div>
             <AutoPagination
-              page={table.getState().pagination.pageIndex + 1}
-              pageSize={table.getPageCount()}
+              queryConfig={queryConfig}
+              page={currentPage} // trang hiện tại
+              totalPages={totalPages} // tổng số trang
               pathname="/manage/dishes"
             />
           </div>

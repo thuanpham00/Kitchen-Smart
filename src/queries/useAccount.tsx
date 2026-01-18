@@ -1,5 +1,6 @@
 import { accountApiRequests } from "@/apiRequests/account";
 import {
+  AccountQueryType,
   ChangePasswordV2BodyType,
   CreateEmployeeAccountBodyType,
   CreateGuestBodyType,
@@ -38,11 +39,11 @@ export const useChangePasswordMutation = () => {
   });
 };
 
-export const useGetListEmployeeQuery = () => {
+export const useGetListEmployeeQuery = (params: AccountQueryType) => {
   return useQuery({
-    queryKey: ["accounts"],
+    queryKey: ["accounts", params],
     queryFn: () => {
-      return accountApiRequests.list();
+      return accountApiRequests.list(params);
     },
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5, // 5 minutes

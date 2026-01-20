@@ -9,7 +9,7 @@ export const useGetListDishQuery = (params: DishQueryType) => {
       return dishApiRequests.list(params);
     },
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60, // 1 minute
   });
 };
 

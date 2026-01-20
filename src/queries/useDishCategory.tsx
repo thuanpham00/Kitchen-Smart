@@ -13,7 +13,7 @@ export const useGetListDishCategoryQuery = (params: DishCategoryQueryType) => {
       return dishCategoryApiRequests.list(params);
     },
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60, // 1 minute
   });
 };
 

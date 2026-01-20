@@ -1,5 +1,10 @@
 import { orderApiRequest } from "@/apiRequests/order";
-import { CreateOrdersBodyType, GetOrdersQueryParamsType, PayGuestOrdersBodyType, UpdateOrderBodyType } from "@/schemaValidations/order.schema";
+import {
+  CreateOrdersBodyType,
+  GetOrdersQueryParamsType,
+  PayGuestOrdersBodyType,
+  UpdateOrderBodyType,
+} from "@/schemaValidations/order.schema";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
 export const useGetOrderQuery = (params: GetOrdersQueryParamsType) => {
@@ -9,7 +14,7 @@ export const useGetOrderQuery = (params: GetOrdersQueryParamsType) => {
       return orderApiRequest.getOrderList(params);
     },
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60, // 1 minute
   });
 };
 export const useGetOrderDetailQuery = ({ id, enabled }: { id: number; enabled: boolean }) => {
@@ -42,6 +47,6 @@ export const useCreateOrderMutation = () => {
   return useMutation({
     mutationFn: (body: CreateOrdersBodyType) => {
       return orderApiRequest.createOrders(body);
-    }
-  })
-}
+    },
+  });
+};

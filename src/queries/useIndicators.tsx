@@ -9,6 +9,6 @@ export const useDashboardIndicator = (queryParams: DashboardIndicatorQueryParams
       return indicatorApiRequest.getDashboardIndicators(queryParams);
     },
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 15, // 15 giây
   });
 };

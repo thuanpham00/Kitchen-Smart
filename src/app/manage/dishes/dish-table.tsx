@@ -92,7 +92,7 @@ export const columns: ColumnDef<DishItem>[] = [
   },
   {
     accessorKey: "price",
-    header: "Giá cả",
+    header: "Giá gốc",
     cell: ({ row }) => <div className="capitalize">{formatCurrency(row.getValue("price"))}</div>,
   },
   {

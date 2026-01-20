@@ -19,7 +19,7 @@ export const useGetMeQuery = ({ queryKey }: { queryKey: string }) => {
       });
     },
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60, // 1 minute
   });
 };
 
@@ -46,7 +46,7 @@ export const useGetListEmployeeQuery = (params: AccountQueryType) => {
       return accountApiRequests.list(params);
     },
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60, // 1 minute
   });
 };
 
@@ -101,7 +101,7 @@ export const useGetGuestListQuery = (queryParams: GetGuestListQueryParamsType) =
     queryKey: ["guests", queryParams],
     queryFn: () => accountApiRequests.guestList(queryParams),
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60, // 1 minute
   });
 };
 

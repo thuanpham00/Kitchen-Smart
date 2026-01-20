@@ -17,6 +17,11 @@ const menuItems = [
     href: "/manage/tables",
   },
   {
+    title: "Menu món ăn",
+    Icon: CookingPot,
+    href: "/manage/menus",
+  },
+  {
     title: "Món ăn",
     Icon: Salad,
     href: "/manage/dishes",
@@ -25,11 +30,6 @@ const menuItems = [
     title: "Danh mục món",
     Icon: List,
     href: "/manage/categories",
-  },
-  {
-    title: "Menu món ăn",
-    Icon: CookingPot,
-    href: "/manage/menus",
   },
   {
     title: "Nhân viên",

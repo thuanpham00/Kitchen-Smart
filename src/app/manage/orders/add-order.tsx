@@ -25,12 +25,12 @@ import { CreateOrdersBodyType } from "@/schemaValidations/order.schema";
 import Quantity from "@/app/guest/menu/quantity";
 import Image from "next/image";
 import { cn, formatCurrency, handleErrorApi } from "@/lib/utils";
-import { DishStatus } from "@/constants/type";
-import { DishListResType } from "@/schemaValidations/dish.schema";
-import { useGetListDishQuery } from "@/queries/useDish";
 import { useCreateOrderMutation } from "@/queries/useOrder";
 import { useCreateGuestMutation } from "@/queries/useAccount";
 import { toast } from "sonner";
+import { useGetMenuActiveQuery } from "@/queries/useMenu";
+import { MenuActiveResType } from "@/schemaValidations/menu.schema";
+import { MenuItemStatus } from "@/constants/type";
 
 export default function AddOrder() {
   const createOrderMutation = useCreateOrderMutation();
@@ -40,13 +40,20 @@ export default function AddOrder() {
   const [selectedGuest, setSelectedGuest] = useState<GetListGuestsResType["data"][0] | null>(null);
   const [isNewGuest, setIsNewGuest] = useState(true);
   const [orders, setOrders] = useState<CreateOrdersBodyType["orders"]>([]);
-  const listDishQuery = useGetListDishQuery();
-  const dishes: DishListResType["data"] = listDishQuery.data?.payload.data || [];
 
-  const totalPrice = dishes.reduce((result, dish) => {
-    const order = orders.find((order) => order.dishId === dish.id);
+  const [searchDish, setSearchDish] = useState<string>("");
+  const menuActiveQuery = useGetMenuActiveQuery();
+
+  const menuItemsData: MenuActiveResType["data"]["menuItems"] =
+    menuActiveQuery.data?.payload.data.menuItems || [];
+  const menuItemsFiltered = menuItemsData.filter((item) =>
+    item.dish.name.toLowerCase().includes(searchDish.toLowerCase()),
+  );
+
+  const totalPrice = menuItemsData.reduce((result, menuItem) => {
+    const order = orders.find((order) => order.menuItemId === menuItem.id);
     if (!order) return result;
-    return result + order.quantity * dish.price;
+    return result + order.quantity * menuItem.price;
   }, 0);
 
   const form = useForm<GuestLoginBodyType>({
@@ -60,14 +67,14 @@ export default function AddOrder() {
   const name = form.watch("name");
   const tableNumber = form.watch("tableNumber");
 
-  const handleQuantityChange = (dishId: number, quantity: number) => {
+  const handleQuantityChange = (menuItemId: number, quantity: number) => {
     setOrders((prevOrders) => {
       if (quantity === 0) {
-        return prevOrders.filter((order) => order.dishId !== dishId);
+        return prevOrders.filter((order) => order.menuItemId !== menuItemId);
       }
-      const index = prevOrders.findIndex((order) => order.dishId === dishId);
+      const index = prevOrders.findIndex((order) => order.menuItemId === menuItemId);
       if (index === -1) {
-        return [...prevOrders, { dishId, quantity }];
+        return [...prevOrders, { menuItemId, quantity }];
       }
       const newOrders = [...prevOrders];
       newOrders[index] = { ...newOrders[index], quantity };
@@ -131,130 +138,144 @@ export default function AddOrder() {
           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Tạo đơn hàng</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-150 max-h-screen overflow-auto">
+      <DialogContent className="sm:max-w-220 max-h-screen overflow-auto">
         <DialogHeader>
           <DialogTitle>Tạo đơn hàng</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-          <Label htmlFor="isNewGuest">Khách hàng mới</Label>
-          <div className="col-span-3 flex items-center">
-            <Switch id="isNewGuest" checked={isNewGuest} onCheckedChange={setIsNewGuest} />
+        <div className="flex items-start gap-4">
+          <div className="w-[40%] flex flex-col gap-4">
+            <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+              <Label htmlFor="isNewGuest">Khách hàng mới</Label>
+              <div className="col-span-3 flex items-center justify-start">
+                <Switch id="isNewGuest" checked={isNewGuest} onCheckedChange={setIsNewGuest} />
+              </div>
+            </div>
+            {isNewGuest && (
+              <Form {...form}>
+                <form
+                  noValidate
+                  className="grid auto-rows-max items-start gap-4 md:gap-8"
+                  id="add-employee-form"
+                >
+                  <div className="grid gap-4 py-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                            <Label htmlFor="name">Tên khách hàng</Label>
+                            <div className="col-span-3 w-full space-y-2">
+                              <Input id="name" className="w-full" {...field} />
+                              <FormMessage />
+                            </div>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="tableNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                            <Label htmlFor="tableNumber">Chọn bàn</Label>
+                            <div className="col-span-3 w-full space-y-2">
+                              <div className="flex items-center gap-4">
+                                <div>{field.value}</div>
+                                <TablesDialog
+                                  onChoose={(table) => {
+                                    field.onChange(table.number);
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </form>
+              </Form>
+            )}
+            {!isNewGuest && (
+              <GuestsDialog
+                onChoose={(guest) => {
+                  setSelectedGuest(guest);
+                }}
+              />
+            )}
+            {!isNewGuest && selectedGuest && (
+              <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                <Label htmlFor="selectedGuest">Khách đã chọn</Label>
+                <div className="col-span-3 w-full gap-4 flex items-center">
+                  <div>
+                    {selectedGuest.name} (#{selectedGuest.id})
+                  </div>
+                  <div>Bàn: {selectedGuest.tableNumber}</div>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-        {isNewGuest && (
-          <Form {...form}>
-            <form noValidate className="grid auto-rows-max items-start gap-4 md:gap-8" id="add-employee-form">
-              <div className="grid gap-4 py-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                        <Label htmlFor="name">Tên khách hàng</Label>
-                        <div className="col-span-3 w-full space-y-2">
-                          <Input id="name" className="w-full" {...field} />
-                          <FormMessage />
-                        </div>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="tableNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                        <Label htmlFor="tableNumber">Chọn bàn</Label>
-                        <div className="col-span-3 w-full space-y-2">
-                          <div className="flex items-center gap-4">
-                            <div>{field.value}</div>
-                            <TablesDialog
-                              onChoose={(table) => {
-                                field.onChange(table.number);
-                              }}
-                            />
+          <div className="w-[60%]">
+            <Input
+              placeholder="Tên món ăn"
+              value={searchDish}
+              onChange={(event) => setSearchDish(event.target.value)}
+              className="max-w-80 mb-4"
+            />
+            <div className="h-100 overflow-auto flex gap-2 flex-col">
+              {menuItemsFiltered
+                .filter((item) => item.status !== MenuItemStatus.HIDDEN)
+                .map((item, index) => (
+                  <div key={item.id} className={cn("flex gap-4")}>
+                    <div className="shrink-0 relative">
+                      <Image
+                        src={item.dish.image}
+                        alt={item.dish.name}
+                        height={100}
+                        width={100}
+                        quality={100}
+                        unoptimized
+                        className="object-cover w-24 h-24 rounded-md"
+                      />
+                      {item.status === MenuItemStatus.OUT_OF_STOCK && (
+                        <div>
+                          <div className="absolute inset-0 z-40 bg-gray-200 opacity-25 rounded-md"></div>
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-md w-full">
+                            <span className="p-1 rounded-lg font-semibold text-sm bg-white text-black w-full block text-center">
+                              Hết hàng
+                            </span>
                           </div>
                         </div>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </form>
-          </Form>
-        )}
-        {!isNewGuest && (
-          <GuestsDialog
-            onChoose={(guest) => {
-              setSelectedGuest(guest);
-            }}
-          />
-        )}
-        {!isNewGuest && selectedGuest && (
-          <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-            <Label htmlFor="selectedGuest">Khách đã chọn</Label>
-            <div className="col-span-3 w-full gap-4 flex items-center">
-              <div>
-                {selectedGuest.name} (#{selectedGuest.id})
-              </div>
-              <div>Bàn: {selectedGuest.tableNumber}</div>
-            </div>
-          </div>
-        )}
-        <div className="h-87.5 overflow-auto flex gap-2 flex-col">
-          {dishes
-            .filter((dish) => dish.status !== DishStatus.Hidden)
-            .map((dish) => (
-              <div
-                key={dish.id}
-                className={cn("flex gap-4", {
-                  "pointer-events-none": dish.status === DishStatus.Unavailable,
-                })}
-              >
-                <div className="shrink-0 relative">
-                  <Image
-                    src={dish.image}
-                    alt={dish.name}
-                    height={100}
-                    width={100}
-                    quality={100}
-                    unoptimized
-                    className="object-cover w-24 h-24 rounded-md"
-                  />
-                  {dish.status === DishStatus.Unavailable && (
-                    <div>
-                      <div className="absolute inset-0 z-40 bg-gray-200 opacity-25 rounded-md"></div>
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-md w-full">
-                        <span className="p-1 rounded-lg font-semibold text-sm bg-white text-black w-full block text-center">
-                          Tạm ngưng
-                        </span>
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-[15px] font-semibold">{dish.name}</h3>
-                  <p className="text-xs">{dish.description}</p>
-                  <p className="text-sm font-semibold">{formatCurrency(dish.price)}</p>
-                </div>
-                <div className="shrink-0 ml-auto flex justify-center items-center">
-                  <Quantity
-                    status={dish.status}
-                    onChange={(value) => handleQuantityChange(dish.id, value)}
-                    value={orders.find((order) => order.dishId === dish.id)?.quantity ?? 0}
-                  />
-                </div>
-              </div>
-            ))}
+                    <div className="space-y-1">
+                      <h3 className="text-[15px] font-semibold">
+                        {index + 1}/{item.dish.name}
+                      </h3>
+                      <p className="text-xs">{item.dish.description}</p>
+                      <p className="text-sm font-semibold">{formatCurrency(item.price)}</p>
+                    </div>
+                    <div className="shrink-0 ml-auto flex justify-center items-center">
+                      <Quantity
+                        status={item.status}
+                        onChange={(value) => handleQuantityChange(item.id, value)}
+                        value={orders.find((order) => order.menuItemId === item.id)?.quantity ?? 0}
+                      />
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            <DialogFooter>
+              <Button className="w-full justify-between" onClick={handleOrder} disabled={orders.length === 0}>
+                <span>Đặt hàng · {orders.length} món</span>
+                <span>{formatCurrency(totalPrice)}</span>
+              </Button>
+            </DialogFooter>
+          </div>
         </div>
-        <DialogFooter>
-          <Button className="w-full justify-between" onClick={handleOrder} disabled={orders.length === 0}>
-            <span>Đặt hàng · {orders.length} món</span>
-            <span>{formatCurrency(totalPrice)}</span>
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

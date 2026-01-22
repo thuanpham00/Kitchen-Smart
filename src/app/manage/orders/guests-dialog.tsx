@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import AutoPagination from "@/components/auto-pagination";
 import { useEffect, useState } from "react";
 import {
   ColumnDef,
@@ -217,18 +216,23 @@ export default function GuestsDialog({ onChoose }: { onChoose: (guest: GuestItem
                 Hiển thị <strong>{table.getPaginationRowModel().rows.length}</strong> trong{" "}
                 <strong>{data.length}</strong> kết quả
               </div>
-              <div>
-                <AutoPagination
-                  page={table.getState().pagination.pageIndex + 1}
-                  pageSize={table.getPageCount()}
-                  onClick={(pageNumber) => {
-                    table.setPagination({
-                      pageIndex: pageNumber - 1,
-                      pageSize: PAGE_SIZE,
-                    });
-                  }}
-                  isLink={false}
-                />
+              <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  Trước
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  Sau
+                </Button>
               </div>
             </div>
           </div>

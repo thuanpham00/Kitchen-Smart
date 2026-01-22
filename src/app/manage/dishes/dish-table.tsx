@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChangeEvent, createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { formatCurrency, getVietnameseDishStatus } from "@/lib/utils";
+import { formatCurrency, getVietnameseDishStatus, handleErrorApi } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
 import { DishListResType, DishQueryType } from "@/schemaValidations/dish.schema";
@@ -26,10 +26,8 @@ import AddDish from "@/app/manage/dishes/add-dish";
 import { useDeleteDishMutation, useGetListDishQuery } from "@/queries/useDish";
 import { toast } from "sonner";
 import useQueryParams from "@/hooks/useQueryParams";
-import { debounce, isUndefined, omitBy } from "lodash";
+import { isUndefined, omitBy } from "lodash";
 import useDebounceInput from "@/hooks/useDebounceInput";
-import { Tag } from "antd";
-import { Check } from "lucide-react";
 import { DishStatus } from "@/constants/type";
 import { Badge } from "@/components/ui/badge";
 import SelectCategory from "@/app/manage/dishes/SelectCategory";
@@ -38,12 +36,12 @@ type DishItem = DishListResType["data"][0];
 
 const getDishStatusColor = (status: (typeof DishStatus)[keyof typeof DishStatus]) => {
   switch (status) {
-    case DishStatus.Available:
+    case DishStatus.Active:
       return "bg-green-500 text-white hover:bg-green-600";
-    case DishStatus.Unavailable:
+    case DishStatus.Discontinued:
       return "bg-yellow-500 text-white hover:bg-yellow-600";
     default:
-      return "bg-gray-500 text-white hover:bg-gray-600";
+      return "bg-yellow-500 text-white hover:bg-yellow-600";
   }
 };
 
@@ -151,13 +149,17 @@ function AlertDialogDeleteDish({
 
   const handleDelete = async () => {
     if (dishDelete) {
-      const {
-        payload: { message },
-      } = await deleteDishMutation.mutateAsync(dishDelete.id);
-      toast.success(message, {
-        duration: 2000,
-      });
-      setDishDelete(null);
+      try {
+        const {
+          payload: { message },
+        } = await deleteDishMutation.mutateAsync(dishDelete.id);
+        toast.success(message, {
+          duration: 2000,
+        });
+        setDishDelete(null);
+      } catch (error) {
+        handleErrorApi({ errors: error });
+      }
     }
   };
 
@@ -227,9 +229,9 @@ export default function DishTable() {
   const listDish = useGetListDishQuery(queryConfig);
 
   const data: DishListResType["data"] = listDish.data?.payload.data || [];
-  const currentPage = listDish.data?.payload.pagination.page || 0; // trang hiện tại
-  const totalPages = listDish.data?.payload.pagination.totalPages || 0; // tổng số trang
-  const total = listDish.data?.payload.pagination.total || 0; // tổng số item
+  const currentPage = (listDish.data?.payload.pagination && listDish.data?.payload.pagination.page) || 0; // trang hiện tại
+  const totalPages = (listDish.data?.payload.pagination && listDish.data?.payload.pagination.totalPages) || 0; // tổng số trang
+  const total = (listDish.data?.payload.pagination && listDish.data?.payload.pagination.total) || 0; // tổng số item
 
   const pagination = {
     pageIndex: queryConfig.page ? queryConfig.page - 1 : 0,

@@ -4,7 +4,11 @@ import Image from "next/image";
 import { OrderStatus } from "@/constants/type";
 import { useEffect } from "react";
 import socket from "@/utils/socket";
-import { PayGuestOrdersResType, UpdateOrderResType } from "@/schemaValidations/order.schema";
+import {
+  CreateOrdersResType,
+  PayGuestOrdersResType,
+  UpdateOrderResType,
+} from "@/schemaValidations/order.schema";
 import { toast } from "sonner";
 import { formatCurrency, getVietnameseOrderStatus } from "../../../lib/utils";
 
@@ -70,7 +74,7 @@ export default function OrdersCart() {
         quantity: 0,
         price: 0,
       },
-    }
+    },
   );
 
   useEffect(() => {
@@ -96,18 +100,22 @@ export default function OrdersCart() {
 
       toast.success(
         `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái ${getVietnameseOrderStatus(status)}`,
-        { duration: 4000 }
+        { duration: 4000 },
       );
       refetch();
     }
 
     function onPayment(data: PayGuestOrdersResType["data"]) {
-      toast.success(
-        `Bạn đã thanh toán thành công ${data.length} đơn`,
-        {
-          duration: 4000,
-        }
-      );
+      toast.success(`Bạn đã thanh toán thành công ${data.length} đơn`, {
+        duration: 4000,
+      });
+      refetch();
+    }
+
+    function onNewOrder(data: CreateOrdersResType["data"]) {
+      toast.success(`Khách hàng ${data[0].guest?.name} (bàn ${data[0].tableNumber}) vừa tạo đơn hàng mới`, {
+        duration: 4000,
+      });
       refetch();
     }
 
@@ -116,12 +124,14 @@ export default function OrdersCart() {
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
+    socket.on("new-order", onNewOrder);
 
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("update-order", onUpdateOrder);
       socket.off("payment", onPayment);
+      socket.off("new-order", onNewOrder);
     };
   }, [refetch]);
 

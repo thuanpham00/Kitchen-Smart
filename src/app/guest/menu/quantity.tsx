@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DishStatus } from "@/constants/type";
+import { MenuItemStatus } from "@/constants/type";
 import { Minus, Plus } from "lucide-react";
 
 export default function Quantity({
@@ -21,7 +21,7 @@ export default function Quantity({
           if (value === 0) return;
           onChange(value - 1);
         }}
-        disabled={value === 0 || status === DishStatus.Unavailable}
+        disabled={value === 0 || status === MenuItemStatus.OUT_OF_STOCK}
       >
         <Minus className="w-3 h-3" />
       </Button>
@@ -36,7 +36,7 @@ export default function Quantity({
           if (isNaN(numberValue)) {
             return;
           }
-          if (status === DishStatus.Unavailable) {
+          if (status === MenuItemStatus.OUT_OF_STOCK) {
             return;
           }
           onChange(numberValue);
@@ -48,7 +48,7 @@ export default function Quantity({
           if (value === 50) return;
           onChange(value + 1);
         }}
-        disabled={value === 50 || status === DishStatus.Unavailable}
+        disabled={value === 50 || status === MenuItemStatus.OUT_OF_STOCK}
       >
         <Plus className="w-3 h-3" />
       </Button>

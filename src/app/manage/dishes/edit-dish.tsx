@@ -52,7 +52,7 @@ export default function EditDish({
       description: "",
       price: 0,
       image: undefined,
-      status: DishStatus.Unavailable,
+      status: DishStatus.Discontinued,
       categoryId: undefined,
     },
   });

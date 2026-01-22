@@ -1,7 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+"use client";
 import DishesMenuDialog, { DishItem } from "@/app/manage/menus/[id]/dishes-menu-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,28 +11,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ListMenuItemStatus, MenuItemStatus } from "@/constants/type";
 import { formatCurrency, handleErrorApi } from "@/lib/utils";
-import { useAddMenuItemMutation } from "@/queries/useMenu";
-import { AddDishToMenu, AddDishToMenuType, MenuItemListResType } from "@/schemaValidations/menu.schema";
+import { useEditMenuItemMutation, useGetMenuItemDetail } from "@/queries/useMenu";
+import { MenuItemListResType, UpdateDishInMenu, UpdateDishInMenuType } from "@/schemaValidations/menu.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export default function AddDishToMenuForm({
-  idMenu,
+export default function EditDishToMenuForm({
+  id,
+  setId,
   dataMenuItemsCurrent,
 }: {
-  idMenu: number;
+  id: number | undefined;
+  setId: (value: number | undefined) => void;
   dataMenuItemsCurrent: MenuItemListResType["data"]["itemList"];
 }) {
-  const addMenuItemMutation = useAddMenuItemMutation();
+  const menuItemDetail = useGetMenuItemDetail({
+    id: id as number,
+    enabled: !!id,
+  });
+  const menuItemData = menuItemDetail.data?.payload.data;
+
+  const editMenuItemMutation = useEditMenuItemMutation();
   const listIdDish = dataMenuItemsCurrent.map((item) => item.dishId);
 
-  const [open, setOpen] = useState(false);
   const [selectedDish, setSelectedDish] = useState<DishItem | null>(null);
-  const form = useForm<AddDishToMenuType>({
-    resolver: zodResolver(AddDishToMenu),
+  const form = useForm<UpdateDishInMenuType>({
+    resolver: zodResolver(UpdateDishInMenu),
     defaultValues: {
       dishId: 0,
       price: 0,
@@ -39,12 +47,25 @@ export default function AddDishToMenuForm({
     },
   });
 
+  useEffect(() => {
+    if (menuItemData) {
+      form.reset({
+        dishId: menuItemData.dishId,
+        price: menuItemData.price,
+        notes: menuItemData.notes || "",
+        status: menuItemData.status,
+      });
+      setSelectedDish(menuItemData.dish);
+    }
+  }, [form, menuItemData]);
+
   const reset = () => {
-    form.reset();
+    setId(undefined);
     setSelectedDish(null);
+    form.reset();
   };
 
-  const submit = async (values: AddDishToMenuType) => {
+  const submit = async (values: UpdateDishInMenuType) => {
     try {
       if (!selectedDish) {
         toast.error("Vui lòng chọn món ăn.", { duration: 2000 });
@@ -56,14 +77,15 @@ export default function AddDishToMenuForm({
       }
       const body = {
         ...values,
-        menuId: idMenu,
       };
       const {
         payload: { message },
-      } = await addMenuItemMutation.mutateAsync(body);
+      } = await editMenuItemMutation.mutateAsync({
+        idMenuItem: id as number,
+        body,
+      });
       toast.success(message, { duration: 2000 });
       reset();
-      setOpen(false);
     } catch (error) {
       handleErrorApi({
         errors: error,
@@ -74,23 +96,16 @@ export default function AddDishToMenuForm({
   return (
     <div>
       <Dialog
-        open={open}
+        open={Boolean(!!id)}
         onOpenChange={(val) => {
           if (!val) {
             reset();
           }
-          setOpen(val);
         }}
       >
-        <DialogTrigger asChild>
-          <Button size="sm" className="h-7 gap-1">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Thêm món ăn vào menu</span>
-          </Button>
-        </DialogTrigger>
         <DialogContent className="sm:max-w-150">
           <DialogHeader>
-            <DialogTitle>Thêm món ăn vào menu</DialogTitle>
+            <DialogTitle>Chỉnh sửa món ăn</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form
@@ -210,15 +225,8 @@ export default function AddDishToMenuForm({
             </form>
 
             <div className="flex items-center justify-end gap-2">
-              <Button type="reset" form="add-dish-to-menu-form">
-                Hủy
-              </Button>
-              <Button
-                type="submit"
-                form="add-dish-to-menu-form"
-                className="bg-blue-500 hover:bg-blue-400 text-white"
-              >
-                Thêm
+              <Button type="submit" form="add-dish-to-menu-form">
+                Lưu
               </Button>
             </div>
           </Form>

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useForm } from "react-hook-form";
-import { useGetMenuDetailQuery, useUpdateMenuMutation } from "@/queries/useMenu";
+import { useDeleteMenuMutation, useGetMenuDetailQuery, useUpdateMenuMutation } from "@/queries/useMenu";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { UpdateMenuBody, UpdateMenuBodyType } from "@/schemaValidations/menu.schema";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,17 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { handleErrorApi } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
 
 export default function FormEditMenu({ idMenu }: { idMenu: number }) {
   const menuDetail = useGetMenuDetailQuery({ id: Number(idMenu), enabled: Boolean(idMenu) });
@@ -45,6 +56,10 @@ export default function FormEditMenu({ idMenu }: { idMenu: number }) {
     try {
       const { payload } = await updateMenuMutation.mutateAsync({ id: idMenu, body: values });
       toast.success(payload.message, { duration: 2000 });
+      form.reset({
+        ...values,
+        version: payload.data.version,
+      });
     } catch (error: any) {
       if (
         error?.payload?.message ===
@@ -62,6 +77,24 @@ export default function FormEditMenu({ idMenu }: { idMenu: number }) {
     form.reset();
   };
 
+  const [openDialog, setOpenDialog] = useState(false);
+  const deleteMenuMutation = useDeleteMenuMutation();
+  const router = useRouter();
+  const handleDeleteMenu = async () => {
+    if (deleteMenuMutation.isPending) return;
+    try {
+      const {
+        payload: { message },
+      } = await deleteMenuMutation.mutateAsync(idMenu);
+      toast.success(message, { duration: 2000 });
+      setOpenDialog(false);
+      router.push("/manage/menus");
+    } catch (error) {
+      handleErrorApi({
+        errors: error,
+      });
+    }
+  };
   return (
     <div>
       <Form {...form}>
@@ -142,6 +175,9 @@ export default function FormEditMenu({ idMenu }: { idMenu: number }) {
         </form>
 
         <div className="flex items-center justify-end gap-2">
+          <Button variant="destructive" onClick={() => setOpenDialog(true)}>
+            Xóa menu
+          </Button>
           <Button type="reset" form="edit-menu-form">
             Hủy
           </Button>
@@ -150,6 +186,21 @@ export default function FormEditMenu({ idMenu }: { idMenu: number }) {
           </Button>
         </div>
       </Form>
+
+      <AlertDialog open={openDialog} onOpenChange={setOpenDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa menu?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Menu sẽ bị xóa vĩnh viễn khỏi hệ thống. Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setOpenDialog(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMenu}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

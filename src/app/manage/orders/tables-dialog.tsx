@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import AutoPagination from "@/components/auto-pagination";
 import { useEffect, useState } from "react";
 import {
   ColumnDef,
@@ -50,8 +49,13 @@ const PAGE_SIZE = 10;
 
 export function TablesDialog({ onChoose }: { onChoose: (table: TableItem) => void }) {
   const [open, setOpen] = useState(false);
-  const listTableQuery = useGetListTableQuery();
+  const listTableQuery = useGetListTableQuery({
+    page: 1,
+    limit: 5, // ko phân trang, lấy hết bàn
+    pagination: "false",
+  });
   const data: TableListResType["data"] = listTableQuery.data?.payload.data || [];
+  const dataFiltered = data.filter((table) => table.status !== TableStatus.Hidden);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -63,7 +67,7 @@ export function TablesDialog({ onChoose }: { onChoose: (table: TableItem) => voi
   });
 
   const table = useReactTable({
-    data,
+    data: dataFiltered,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -173,20 +177,25 @@ export function TablesDialog({ onChoose }: { onChoose: (table: TableItem) => voi
             <div className="flex items-center justify-end space-x-2 py-4">
               <div className="text-xs text-muted-foreground py-4 flex-1 ">
                 Hiển thị <strong>{table.getPaginationRowModel().rows.length}</strong> trong{" "}
-                <strong>{data.length}</strong> kết quả
+                <strong>{dataFiltered.length}</strong> kết quả
               </div>
-              <div>
-                <AutoPagination
-                  page={table.getState().pagination.pageIndex + 1}
-                  pageSize={table.getPageCount()}
-                  onClick={(pageNumber) => {
-                    table.setPagination({
-                      pageIndex: pageNumber - 1,
-                      pageSize: PAGE_SIZE,
-                    });
-                  }}
-                  isLink={false}
-                />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  Trước
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  Sau
+                </Button>
               </div>
             </div>
           </div>

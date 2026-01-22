@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/incompatible-library */
 "use client";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
 import { DishQueryType } from "@/schemaValidations/dish.schema";
@@ -12,10 +13,13 @@ import { isUndefined, omitBy } from "lodash";
 import useDebounceInput from "@/hooks/useDebounceInput";
 import { Badge } from "@/components/ui/badge";
 import AddMenu from "@/app/manage/menus/add-menu";
-import { useGetListMenuQuery } from "@/queries/useMenu";
-import { MenuListResType } from "@/schemaValidations/menu.schema";
+import { useGetListMenuQuery, useUpdateMenuMutation } from "@/queries/useMenu";
+import { MenuListResType, UpdateMenuBodyType } from "@/schemaValidations/menu.schema";
 import { CircleAlert } from "lucide-react";
 import Link from "next/link";
+import { Switch } from "@/components/ui/switch";
+import { handleErrorApi } from "@/lib/utils";
+import { toast } from "sonner";
 
 export type MenuItem = MenuListResType["data"][0];
 
@@ -58,6 +62,24 @@ export const columns: ColumnDef<MenuItem>[] = [
     },
   },
   {
+    accessorKey: "on/off",
+    header: "Bật/Tắt",
+    cell: function Actions({ row }) {
+      const { updateStatusMenu } = useContext(MenuTableContext);
+      const isActive = row.getValue("isActive") as boolean;
+
+      const handleUpdateStatus = async () => {
+        updateStatusMenu(row.original.id, {
+          name: row.original.name,
+          description: row.original.description || "",
+          version: row.original.version,
+          isActive: !isActive,
+        });
+      };
+      return <Switch checked={isActive} onCheckedChange={handleUpdateStatus} />;
+    },
+  },
+  {
     accessorKey: "countMenuItems",
     header: "Số lượng món",
     cell: ({ row }) => {
@@ -90,6 +112,12 @@ export const columns: ColumnDef<MenuItem>[] = [
     },
   },
 ];
+
+const MenuTableContext = createContext<{
+  updateStatusMenu: (id: number, body: UpdateMenuBodyType) => void;
+}>({
+  updateStatusMenu: (id: number, body: UpdateMenuBodyType) => {},
+});
 
 export default function MenuTable() {
   const router = useRouter();
@@ -148,83 +176,97 @@ export default function MenuTable() {
       pagination,
     },
   });
+  const updateStatusMenuMutation = useUpdateMenuMutation();
+
+  const updateStatusMenu = async (id: number, body: UpdateMenuBodyType) => {
+    try {
+      await updateStatusMenuMutation.mutateAsync({ id, body });
+      toast.success("Cập nhật trạng thái menu thành công", { duration: 2000 });
+    } catch (error) {
+      handleErrorApi({
+        errors: error,
+      });
+    }
+  };
 
   return (
-    <div className="w-full">
-      <div className="bg-[#fffbe6] rounded-lg flex items-center gap-2 p-4 mb-2">
-        <div className="p-2 rounded-full bg-yellow-500 inline-block">
-          <CircleAlert size={16} />
+    <MenuTableContext.Provider value={{ updateStatusMenu }}>
+      <div className="w-full">
+        <div className="bg-[#fffbe6] rounded-lg flex items-center gap-2 p-4 mb-2">
+          <div className="p-2 rounded-full bg-yellow-500 inline-block">
+            <CircleAlert size={16} />
+          </div>
+          <p className="text-black text-sm">
+            Tại một thời điểm chỉ có một menu được áp dụng. Khi kích hoạt menu mới, menu cũ sẽ tự động bị vô
+            hiệu hóa.
+          </p>
         </div>
-        <p className="text-black text-sm">
-          Tại một thời điểm chỉ có một menu được áp dụng. Khi kích hoạt menu mới, menu cũ sẽ tự động bị vô
-          hiệu hóa.
-        </p>
-      </div>
 
-      <div className="flex items-center gap-2 py-4">
-        <Input
-          placeholder="Lọc tên"
-          value={searchName}
-          onChange={(event) => setSearchName(event.target.value)}
-          className="max-w-sm"
-        />
-
-        <div className="ml-auto flex items-center gap-2">
-          <AddMenu />
-        </div>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="text-xs text-muted-foreground py-4 flex-1 ">
-          Hiển thị <strong>{data.length}</strong> trong <strong>{total}</strong> kết quả
-        </div>
-        <div>
-          <AutoPagination
-            queryConfig={queryConfig}
-            page={currentPage} // trang hiện tại
-            totalPages={totalPages} // tổng số trang
-            pathname="/manage/menus"
+        <div className="flex items-center gap-2 py-4">
+          <Input
+            placeholder="Lọc tên"
+            value={searchName}
+            onChange={(event) => setSearchName(event.target.value)}
+            className="max-w-sm"
           />
+
+          <div className="ml-auto flex items-center gap-2">
+            <AddMenu />
+          </div>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="text-xs text-muted-foreground py-4 flex-1 ">
+            Hiển thị <strong>{data.length}</strong> trong <strong>{total}</strong> kết quả
+          </div>
+          <div>
+            <AutoPagination
+              queryConfig={queryConfig}
+              page={currentPage} // trang hiện tại
+              totalPages={totalPages} // tổng số trang
+              pathname="/manage/menus"
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </MenuTableContext.Provider>
   );
 }

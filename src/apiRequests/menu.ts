@@ -1,9 +1,13 @@
 import {
   AddDishToMenuType,
+  CreateMenuBodyType,
+  MenuActiveResType,
   MenuItemListResType,
+  MenuItemResType,
   MenuListResType,
   MenuQueryType,
   MenuResType,
+  UpdateDishInMenuType,
   UpdateMenuBodyType,
 } from "@/schemaValidations/menu.schema";
 import http from "@/utils/http";
@@ -17,7 +21,14 @@ export const menuApiRequests = {
       },
     });
   },
-  addMenu: (body: UpdateMenuBodyType) => {
+  menuActive: () => {
+    return http.get<MenuActiveResType>("/menus/active", {
+      next: {
+        tags: ["menus"],
+      },
+    });
+  },
+  addMenu: (body: CreateMenuBodyType) => {
     return http.post<MenuResType>("/menus", body);
   },
   updateMenu: (id: number, body: UpdateMenuBodyType) => {
@@ -39,7 +50,24 @@ export const menuApiRequests = {
     });
   },
 
+  // menuItem
+  menuItem: (idMenu: number) => {
+    return http.get<MenuItemResType>(`/menus/menu-item/${idMenu}`, {
+      next: {
+        tags: ["menus"],
+      },
+    });
+  },
+
   addMenuItem: (body: AddDishToMenuType) => {
-    return http.post<MenuResType>(`/menus/add-menu-item`, body);
+    return http.post<MenuResType>(`/menus/menu-item`, body);
+  },
+
+  editMenuItem: (idMenuItem: number, body: UpdateDishInMenuType) => {
+    return http.put<MenuResType>(`/menus/menu-item/${idMenuItem}`, body);
+  },
+
+  deleteMenuItem: (idMenuItem: number) => {
+    return http.delete<MenuResType>(`/menus/menu-item/${idMenuItem}`);
   },
 };

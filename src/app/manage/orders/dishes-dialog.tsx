@@ -2,8 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import AutoPagination from "@/components/auto-pagination";
-import { DishListResType } from "@/schemaValidations/dish.schema";
 import { useEffect, useState } from "react";
 import {
   ColumnDef,
@@ -17,32 +15,38 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { formatCurrency, getVietnameseDishStatus, simpleMatchText } from "@/lib/utils";
+import { formatCurrency, simpleMatchText } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { useGetListDishQuery } from "@/queries/useDish";
-import { DishStatus } from "@/constants/type";
+import { MenuItemStatus } from "@/constants/type";
+import { useGetMenuActiveQuery } from "@/queries/useMenu";
+import { MenuItemResType } from "@/schemaValidations/menu.schema";
 
-type DishItem = DishListResType["data"][0];
-export const columns: ColumnDef<DishItem>[] = [
+export type MenuItem = MenuItemResType["data"];
+export const columns: ColumnDef<MenuItem>[] = [
+  {
+    id: "stt",
+    header: "STT",
+    cell: ({ row }) => <div className="font-medium">#{row.index + 1}</div>,
+  },
   {
     id: "dishName",
     header: "Món ăn",
     cell: ({ row }) => (
       <div className="flex items-center space-x-4">
         <Image
-          src={row.original.image}
-          alt={row.original.name}
+          src={row.original.dish.image}
+          alt={row.original.dish.name}
           width={50}
           height={50}
           className="rounded-md object-cover w-12.5 h-12.5"
         />
-        <span>{row.original.name}</span>
+        <span>{row.original.dish.name}</span>
       </div>
     ),
     filterFn: (row, columnId, filterValue: string) => {
       if (filterValue === undefined) return true;
-      return simpleMatchText(String(row.original.name), String(filterValue));
+      return simpleMatchText(String(row.original.dish.name), String(filterValue));
     },
   },
   {
@@ -53,15 +57,20 @@ export const columns: ColumnDef<DishItem>[] = [
   {
     accessorKey: "status",
     header: "Trạng thái",
-    cell: ({ row }) => <div>{getVietnameseDishStatus(row.getValue("status"))}</div>,
+    cell: ({ row }) => <div>{row.original.status === MenuItemStatus.AVAILABLE ? "Có sẵn" : "Hết hàng"}</div>,
   },
 ];
 
 const PAGE_SIZE = 10;
-export function DishesDialog({ onChoose }: { onChoose: (dish: DishItem) => void }) {
+export function DishesDialog({ onChoose }: { onChoose: (menuItem: MenuItem) => void }) {
   const [open, setOpen] = useState(false);
-  const listDishQuery = useGetListDishQuery();
-  const data = listDishQuery.data?.payload.data.filter((item) => item.status !== DishStatus.Hidden) || [];
+
+  const menuActiveQuery = useGetMenuActiveQuery();
+
+  const data =
+    menuActiveQuery.data?.payload.data.menuItems.filter((item) => item.status !== MenuItemStatus.HIDDEN) ||
+    [];
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -100,8 +109,9 @@ export function DishesDialog({ onChoose }: { onChoose: (dish: DishItem) => void 
     });
   }, [table]);
 
-  const choose = (dish: DishItem) => {
-    onChoose(dish); // chuyển dữ liệu từ child lên parent thông qua hàm onChoose (props)
+  const choose = (menuItem: MenuItem) => {
+    console.log(menuItem);
+    onChoose(menuItem); // chuyển dữ liệu từ child lên parent thông qua hàm onChoose (props)
     setOpen(false);
   };
 
@@ -172,18 +182,23 @@ export function DishesDialog({ onChoose }: { onChoose: (dish: DishItem) => void 
                 Hiển thị <strong>{table.getPaginationRowModel().rows.length}</strong> trong{" "}
                 <strong>{data.length}</strong> kết quả
               </div>
-              <div>
-                <AutoPagination
-                  page={table.getState().pagination.pageIndex + 1}
-                  pageSize={table.getPageCount()}
-                  onClick={(pageNumber) => {
-                    table.setPagination({
-                      pageIndex: pageNumber - 1,
-                      pageSize: PAGE_SIZE,
-                    });
-                  }}
-                  isLink={false}
-                />
+              <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  Trước
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  Sau
+                </Button>
               </div>
             </div>
           </div>

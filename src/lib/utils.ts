@@ -115,12 +115,12 @@ export const checkAndRefreshToken = async (params?: { onError?: () => void; onSu
 
 export const getVietnameseDishStatus = (status: (typeof DishStatus)[keyof typeof DishStatus]) => {
   switch (status) {
-    case DishStatus.Available:
-      return "Có sẵn";
-    case DishStatus.Unavailable:
-      return "Tạm ngưng";
+    case DishStatus.Active:
+      return "Đang hoạt động";
+    case DishStatus.Discontinued:
+      return "Ngừng phục vụ";
     default:
-      return "Ẩn";
+      return "Ngừng phục vụ";
   }
 };
 

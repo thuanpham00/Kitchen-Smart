@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/incompatible-library */
 "use client";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,84 +11,44 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusCircle, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { PlusCircle } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getVietnameseDishStatus, handleErrorApi } from "@/lib/utils";
-import { CreateDishBody, CreateDishBodyType } from "@/schemaValidations/dish.schema";
-import { DishStatus, DishStatusValues } from "@/constants/type";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { handleErrorApi } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useUploadMutation } from "@/queries/useMedia";
-import { useAddDishMutation } from "@/queries/useDish";
 import revalidateApiRequests from "@/apiRequests/revalidate";
-import { useGetListDishCategoryNameQuery } from "@/queries/useDishCategory";
+import { useAddMenuMutation } from "@/queries/useMenu";
+import { CreateMenuBody, CreateMenuBodyType } from "@/schemaValidations/menu.schema";
 
 export default function AddMenu() {
-  const uploadMutation = useUploadMutation();
-  const addDishMutation = useAddDishMutation();
-  const listNameDishCategory = useGetListDishCategoryNameQuery();
-  const dishCategories = listNameDishCategory.data?.payload.data || [];
+  const addMenuMutation = useAddMenuMutation();
 
-  const [file, setFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const form = useForm<CreateDishBodyType>({
-    resolver: zodResolver(CreateDishBody),
+  const form = useForm<CreateMenuBodyType>({
+    resolver: zodResolver(CreateMenuBody),
     defaultValues: {
       name: "",
       description: "",
-      price: 0,
-      image: undefined,
-      status: DishStatus.Unavailable,
-      categoryId: undefined,
+      isActive: false,
+      version: 1,
     },
   });
-  const image = form.watch("image");
-  const name = form.watch("name");
-  const previewAvatarFromFile = file ? URL.createObjectURL(file) : image;
-
-  const handleChangeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileFormLocal = e.target.files?.[0];
-    if (fileFormLocal && !fileFormLocal.type.startsWith("image/")) {
-      toast.error("Vui lòng chọn tệp hình ảnh hợp lệ.", {
-        duration: 2000,
-      });
-    } else {
-      toast.success("Ảnh món ăn hợp lệ", {
-        duration: 2000,
-      });
-      setFile(fileFormLocal as File);
-    }
-  };
 
   const reset = () => {
     form.reset();
-    setFile(null);
   };
 
-  const submit = async (values: CreateDishBodyType) => {
-    if (addDishMutation.isPending) return;
-    let body = values;
+  const submit = async (values: CreateMenuBodyType) => {
+    console.log(values);
+    if (addMenuMutation.isPending) return;
     try {
-      if (file) {
-        const formData = new FormData();
-        formData.append("file", file);
-        const { payload } = await uploadMutation.mutateAsync(formData);
-        const urlImage = payload.data;
-        body = {
-          ...values,
-          image: urlImage,
-        };
-      }
       const {
         payload: { message },
-      } = await addDishMutation.mutateAsync(body);
+      } = await addMenuMutation.mutateAsync(values);
 
-      await revalidateApiRequests("dishes");
+      await revalidateApiRequests("menus");
 
       toast.success(message, {
         duration: 2000,
@@ -117,12 +76,12 @@ export default function AddMenu() {
       <DialogTrigger asChild>
         <Button size="sm" className="h-7 gap-1">
           <PlusCircle className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Thêm món ăn</span>
+          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Tạo menu</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-150 max-h-screen overflow-auto">
         <DialogHeader>
-          <DialogTitle>Thêm món ăn</DialogTitle>
+          <DialogTitle>Tạo menu</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -137,68 +96,13 @@ export default function AddMenu() {
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
-                name="image"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2 items-start justify-start">
-                      <Avatar className="aspect-square w-25 h-25 rounded-md object-cover">
-                        <AvatarImage src={previewAvatarFromFile} />
-                        <AvatarFallback className="rounded-none">{name || "Ảnh món ăn"}</AvatarFallback>
-                      </Avatar>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={imageInputRef}
-                        onChange={(e) => {
-                          handleChangeFile(e);
-                          field.onChange("http://localhost:3000/" + field.name);
-                        }}
-                        className="hidden"
-                      />
-                      <button
-                        className="flex aspect-square w-25 items-center justify-center rounded-md border border-dashed"
-                        type="button"
-                        onClick={() => imageInputRef.current?.click()}
-                      >
-                        <Upload className="h-4 w-4 text-muted-foreground" />
-                        <span className="sr-only">Upload</span>
-                      </button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="name">Tên món ăn</Label>
+                      <Label htmlFor="name">Tên menu</Label>
                       <div className="col-span-3 w-full space-y-2">
                         <Input id="name" className="w-full" {...field} />
-                        <FormMessage />
-                      </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="price">Giá</Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Input
-                          id="price"
-                          className="w-full"
-                          {...field}
-                          type="number"
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                        />
                         <FormMessage />
                       </div>
                     </div>
@@ -212,70 +116,11 @@ export default function AddMenu() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="description">Mô tả món ăn</Label>
+                      <Label htmlFor="description">Mô tả menu</Label>
                       <div className="col-span-3 w-full space-y-2">
                         <Textarea id="description" className="w-full" {...field} />
                         <FormMessage />
                       </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="categoryId">Danh mục</Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn danh mục" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {dishCategories.map((category) => (
-                              <SelectItem key={category.id} value={category.id.toString()}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="status">Trạng thái</Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn trạng thái" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {DishStatusValues.map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {getVietnameseDishStatus(status)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <FormMessage />
                     </div>
                   </FormItem>
                 )}

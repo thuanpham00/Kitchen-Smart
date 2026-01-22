@@ -92,3 +92,25 @@ export const AddDishToMenu = z.object({
 });
 
 export type AddDishToMenuType = z.TypeOf<typeof AddDishToMenu>;
+
+export const UpdateDishInMenu = AddDishToMenu;
+
+export type UpdateDishInMenuType = z.TypeOf<typeof UpdateDishInMenu>;
+
+export const MenuActive = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().nullable(),
+  version: z.number(),
+  isActive: z.boolean(),
+  menuItems: z.array(MenuItemSchema),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export const MenuActiveRes = z.object({
+  data: MenuActive,
+  message: z.string(),
+});
+
+export type MenuActiveResType = z.TypeOf<typeof MenuActiveRes>;

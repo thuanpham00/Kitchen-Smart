@@ -4,7 +4,7 @@
 "use client";
 import FormEditMenu from "@/app/manage/menus/[id]/form-edit-menu";
 import { useParams } from "next/navigation";
-import { createContext, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ColumnDef,
@@ -18,25 +18,38 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { useGetListItemMenuFromMenu } from "@/queries/useMenu";
+import { useDeleteMenuItemMutation, useGetListItemMenuFromMenu } from "@/queries/useMenu";
 import { MenuItemListResType } from "@/schemaValidations/menu.schema";
 import { formatCurrency, formatDateTimeToLocaleString } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import AddDishToMenuForm from "@/app/manage/menus/[id]/add-dish-to-menu";
+import EditDishToMenuForm from "@/app/manage/menus/[id]/edit-dish-to-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
 // sử dụng trong phạm vị component AccountTable và các component con của nó
 const MenuTableContext = createContext<{
-  setMenuIdEdit: (value: number) => void;
-  menuIdEdit: number | undefined;
-  menuDelete: MenuItem | null;
-  setMenuDelete: (value: MenuItem | null) => void;
+  setMenuItemIdEdit: (value: number) => void;
+  menuItemIdEdit: number | undefined;
+  menuItemDelete: MenuItem | null;
+  setMenuItemDelete: (value: MenuItem | null) => void;
 }>({
-  setMenuIdEdit: (value: number | undefined) => {},
-  menuIdEdit: undefined,
-  menuDelete: null,
-  setMenuDelete: (value: MenuItem | null) => {},
+  setMenuItemIdEdit: (value: number | undefined) => {},
+  menuItemIdEdit: undefined,
+  menuItemDelete: null,
+  setMenuItemDelete: (value: MenuItem | null) => {},
 });
 
 type MenuItem = MenuItemListResType["data"]["itemList"][0];
@@ -76,23 +89,34 @@ const columns: ColumnDef<MenuItem>[] = [
         </div>
       );
     },
+    filterFn: (row, columnId, filterValue: string) => {
+      if (!filterValue) return true;
+      const dishName = row.original.dish.name.toLowerCase();
+      return dishName.includes(filterValue.toLowerCase());
+    },
   },
   {
     id: "price",
     header: "Giá menu",
     cell: ({ row }) => {
-      const dish = row.original.dish;
       const menuItemPrice = row.original.price;
-      const isDiscounted = menuItemPrice < dish.price;
 
       return (
         <div className="space-y-1">
-          {isDiscounted && (
-            <div className="text-sm text-muted-foreground line-through">{formatCurrency(dish.price)}</div>
-          )}
-          <div className={`font-medium ${isDiscounted ? "text-red-500" : ""}`}>
-            {formatCurrency(menuItemPrice)}
-          </div>
+          <div className={`font-medium text-orange-500 text-lg`}>{formatCurrency(menuItemPrice)}</div>
+        </div>
+      );
+    },
+  },
+  {
+    id: "price_base",
+    header: "Giá gốc",
+    cell: ({ row }) => {
+      const dishPrice = row.original.dish.price;
+
+      return (
+        <div className="space-y-1">
+          <div className={`font-medium }`}>{formatCurrency(dishPrice)}</div>
         </div>
       );
     },
@@ -111,9 +135,9 @@ const columns: ColumnDef<MenuItem>[] = [
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       const statusMap: Record<string, { label: string; variant: string }> = {
-        AVAILABLE: { label: "Có sẵn", variant: "default" },
-        OUT_OF_STOCK: { label: "Hết hàng", variant: "destructive" },
-        HIDDEN: { label: "Ẩn", variant: "secondary" },
+        Available: { label: "Có sẵn", variant: "default" },
+        OutOfStock: { label: "Hết hàng", variant: "destructive" },
+        Hidden: { label: "Ẩn", variant: "secondary" },
       };
       const statusInfo = statusMap[status] || { label: status, variant: "default" };
 
@@ -143,16 +167,76 @@ const columns: ColumnDef<MenuItem>[] = [
     id: "actions",
     header: () => <div className="text-center">Hành động</div>,
     cell: function Actions({ row }) {
+      const { setMenuItemIdEdit, setMenuItemDelete } = useContext(MenuTableContext);
+      const openEditMenuItem = () => {
+        setMenuItemIdEdit(row.original.id);
+      };
+      const openDeleteMenuItem = () => {
+        setMenuItemDelete(row.original);
+      };
       return (
-        <div className="flex justify-center">
-          <Button size="sm" className="bg-red-500 hover:bg-red-400 text-white">
+        <div className="flex justify-center gap-2">
+          <Button size="sm" className="bg-red-500 hover:bg-red-400 text-white" onClick={openDeleteMenuItem}>
             Xóa khỏi menu
+          </Button>
+          <Button size="sm" className="bg-blue-500 hover:bg-blue-400 text-white" onClick={openEditMenuItem}>
+            Sửa
           </Button>
         </div>
       );
     },
   },
 ];
+
+function AlertDialogDeleteMenuItem({
+  menuItemDelete,
+  setMenuItemDelete,
+}: {
+  menuItemDelete: MenuItem | null;
+  setMenuItemDelete: (value: MenuItem | null) => void;
+}) {
+  const deleteMenuItemMutation = useDeleteMenuItemMutation();
+
+  const handleDelete = async () => {
+    if (menuItemDelete) {
+      const {
+        payload: { message },
+      } = await deleteMenuItemMutation.mutateAsync(menuItemDelete.id);
+      toast.success(message, {
+        duration: 2000,
+      });
+      setMenuItemDelete(null);
+    }
+  };
+
+  return (
+    <AlertDialog
+      open={Boolean(menuItemDelete)}
+      onOpenChange={(value) => {
+        if (!value) {
+          setMenuItemDelete(null);
+        }
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Xóa món ăn khỏi menu?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Món{" "}
+            <span className="bg-foreground text-primary-foreground rounded px-1">
+              {menuItemDelete?.dish.name}
+            </span>{" "}
+            sẽ bị xóa vĩnh viễn khỏi menu {menuItemDelete?.menuId}.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setMenuItemDelete(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
 const PAGE_SIZE = 10;
 const pageIndex = 0;
@@ -194,9 +278,17 @@ export default function MenuDetail() {
     },
   });
 
+  const [menuItemIdEdit, setMenuItemIdEdit] = useState<number>();
+  const [menuItemDelete, setMenuItemDelete] = useState<MenuItem | null>(null);
+
   return (
-    <div>
+    <MenuTableContext.Provider
+      value={{ setMenuItemIdEdit, menuItemIdEdit, menuItemDelete, setMenuItemDelete }}
+    >
       <FormEditMenu idMenu={Number(id)} />
+      <EditDishToMenuForm id={menuItemIdEdit} setId={setMenuItemIdEdit} dataMenuItemsCurrent={data} />
+      <AlertDialogDeleteMenuItem menuItemDelete={menuItemDelete} setMenuItemDelete={setMenuItemDelete} />
+
       <div>
         <div className="w-full h-px bg-[#2e2f2f] my-8"></div>
         <div className="flex items-center mb-6">
@@ -205,6 +297,13 @@ export default function MenuDetail() {
             <AddDishToMenuForm idMenu={Number(id)} dataMenuItemsCurrent={data} />
           </div>
         </div>
+
+        <Input
+          placeholder="Tên món ăn"
+          value={(table.getColumn("dishName")?.getFilterValue() as string) ?? ""}
+          onChange={(event) => table.getColumn("dishName")?.setFilterValue(event.target.value)}
+          className="max-w-80 mb-4"
+        />
 
         <div className="rounded-md border">
           <Table>
@@ -269,6 +368,6 @@ export default function MenuDetail() {
           </div>
         </div>
       </div>
-    </div>
+    </MenuTableContext.Provider>
   );
 }

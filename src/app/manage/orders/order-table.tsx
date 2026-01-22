@@ -24,7 +24,6 @@ import AddOrder from "@/app/manage/orders/add-order";
 import EditOrder from "@/app/manage/orders/edit-order";
 import { createContext, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import AutoPagination from "@/components/auto-pagination";
 import { getVietnameseOrderStatus, handleErrorApi } from "@/lib/utils";
 import { OrderStatusValues } from "@/constants/type";
 import OrderStatics from "@/app/manage/orders/order-statics";
@@ -34,18 +33,9 @@ import { cn } from "@/lib/utils";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { endOfDay, format, startOfDay } from "date-fns";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useContext } from "react";
 import { formatCurrency, formatDateTimeToLocaleString, simpleMatchText } from "@/lib/utils";
 import Image from "next/image";
@@ -65,7 +55,7 @@ const OrderTableContext = createContext({
   setOrderIdEdit: (value: number | undefined) => {},
   changeStatus: (payload: {
     orderId: number;
-    dishId: number;
+    menuItemId: number;
     quantity: number;
     status: (typeof OrderStatusValues)[number];
   }) => {},
@@ -172,7 +162,7 @@ const orderTableColumns: ColumnDef<OrderItem>[] = [
       const changeOrderStatus = async (status: (typeof OrderStatusValues)[number]) => {
         changeStatus({
           orderId: row.original.id,
-          dishId: row.original.dishSnapshot.dishId!,
+          menuItemId: row.original.dishSnapshot.menuItemId!,
           status: status,
           quantity: row.original.quantity,
         });
@@ -184,6 +174,7 @@ const orderTableColumns: ColumnDef<OrderItem>[] = [
           }}
           defaultValue={OrderStatus.Pending}
           value={row.getValue("status")}
+          disabled={row.original.status === OrderStatus.Rejected || row.original.status === OrderStatus.Paid}
         >
           <SelectTrigger className="w-35">
             <SelectValue placeholder="Theme" />
@@ -266,7 +257,11 @@ export default function OrderTable() {
   }); // fetch order list ngày hôm nay (mặc định)
   const orderList: GetOrdersResType["data"] = data?.payload.data ?? [];
 
-  const tableListQuery = useGetListTableQuery();
+  const tableListQuery = useGetListTableQuery({
+    pagination: "false",
+    page: 1,
+    limit: 5, // nếu pagination = false thì page và limit không có ý nghĩa
+  });
   const tableList: TableListResType["data"] = tableListQuery.data?.payload.data ?? [];
 
   const tableListSortedByNumber = tableList.sort((a, b) => a.number - b.number);
@@ -286,7 +281,7 @@ export default function OrderTable() {
   const updateOrderMutation = useUpdateOrderMutation();
   const changeStatus = async (body: {
     orderId: number;
-    dishId: number;
+    menuItemId: number;
     status: (typeof OrderStatusValues)[number];
     quantity: number;
   }) => {
@@ -294,7 +289,7 @@ export default function OrderTable() {
       await updateOrderMutation.mutateAsync({
         orderId: body.orderId,
         body: {
-          dishId: body.dishId,
+          menuItemId: body.menuItemId,
           quantity: body.quantity,
           status: body.status,
         },
@@ -369,7 +364,7 @@ export default function OrderTable() {
 
       toast.success(
         `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái ${getVietnameseOrderStatus(status)}`,
-        { duration: 4000 }
+        { duration: 4000 },
       );
       refetchList();
     }
@@ -386,7 +381,7 @@ export default function OrderTable() {
         `Khách hàng ${data[0].guest?.name} (bàn ${data[0].tableNumber}) thanh toán thành công ${data.length} đơn`,
         {
           duration: 4000,
-        }
+        },
       );
       refetchList();
     }
@@ -470,7 +465,7 @@ export default function OrderTable() {
               >
                 {table.getColumn("status")?.getFilterValue()
                   ? getVietnameseOrderStatus(
-                      table.getColumn("status")?.getFilterValue() as (typeof OrderStatusValues)[number]
+                      table.getColumn("status")?.getFilterValue() as (typeof OrderStatusValues)[number],
                     )
                   : "Trạng thái"}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -488,7 +483,9 @@ export default function OrderTable() {
                           table
                             .getColumn("status")
                             ?.setFilterValue(
-                              currentValue === table.getColumn("status")?.getFilterValue() ? "" : currentValue
+                              currentValue === table.getColumn("status")?.getFilterValue()
+                                ? ""
+                                : currentValue,
                             );
                           setOpenStatusFilter(false);
                         }}
@@ -498,7 +495,7 @@ export default function OrderTable() {
                             "mr-2 h-4 w-4",
                             table.getColumn("status")?.getFilterValue() === status
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                         {getVietnameseOrderStatus(status)}
@@ -559,12 +556,23 @@ export default function OrderTable() {
             Hiển thị <strong>{table.getPaginationRowModel().rows.length}</strong> trong{" "}
             <strong>{orderList.length}</strong> kết quả
           </div>
-          <div>
-            <AutoPagination
-              page={table.getState().pagination.pageIndex + 1}
-              pageSize={table.getPageCount()}
-              pathname="/manage/orders"
-            />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Trước
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Sau
+            </Button>
           </div>
         </div>
       </div>

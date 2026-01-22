@@ -5,7 +5,8 @@ import z from "zod";
 export const TableQuery = BaseQuery.and(
   z.object({
     number: z.string().trim().max(256).optional(),
-  })
+    pagination: z.string().optional(),
+  }),
 );
 
 export type TableQueryType = z.TypeOf<typeof TableQuery>;

@@ -44,7 +44,7 @@ export default function AddDish() {
       description: "",
       price: 0,
       image: undefined,
-      status: DishStatus.Unavailable,
+      status: DishStatus.Discontinued,
       categoryId: undefined,
     },
   });

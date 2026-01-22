@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DishesDialog } from "@/app/manage/orders/dishes-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
-import { DishListResType } from "@/schemaValidations/dish.schema";
 import { useGetOrderDetailQuery, useUpdateOrderMutation } from "@/queries/useOrder";
 import { toast } from "sonner";
 
@@ -28,14 +28,12 @@ export default function EditOrder({
   const updateOrderMutation = useUpdateOrderMutation();
   const orderDetail = useGetOrderDetailQuery({ id: id as number, enabled: Boolean(id) });
   const dataOrderDetail = orderDetail.data?.payload.data;
-
-  const [selectedDish, setSelectedDish] = useState<DishListResType["data"][0] | undefined>(undefined);
-
+  const [selectedMenuItem, setSelectedMenuItem] = useState<any | undefined>(undefined);
   const form = useForm<UpdateOrderBodyType>({
     resolver: zodResolver(UpdateOrderBody),
     defaultValues: {
       status: OrderStatus.Pending,
-      dishId: 0,
+      menuItemId: 0,
       quantity: 1,
     },
   });
@@ -44,11 +42,11 @@ export default function EditOrder({
     if (dataOrderDetail) {
       const { dishSnapshot, quantity, status } = dataOrderDetail;
       form.reset({
-        dishId: dishSnapshot.dishId ?? 0,
+        menuItemId: dishSnapshot.menuItemId ?? 0,
         quantity: quantity,
         status: status,
       });
-      setSelectedDish(dishSnapshot);
+      setSelectedMenuItem(dishSnapshot);
     }
   }, [dataOrderDetail, form]);
 
@@ -74,6 +72,7 @@ export default function EditOrder({
 
   const reset = () => {
     setId(undefined);
+    setSelectedMenuItem(undefined);
   };
 
   return (
@@ -99,22 +98,24 @@ export default function EditOrder({
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
-                name="dishId"
+                name="menuItemId"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-4 items-center justify-items-start gap-4">
                     <FormLabel>Món ăn</FormLabel>
                     <div className="flex items-center col-span-2 space-x-4">
                       <Avatar className="aspect-square w-12.5 h-12.5 rounded-md object-cover">
-                        <AvatarImage src={selectedDish?.image} />
-                        <AvatarFallback className="rounded-none">{selectedDish?.name}</AvatarFallback>
+                        <AvatarImage src={selectedMenuItem?.image || selectedMenuItem?.dish?.image} />
+                        <AvatarFallback className="rounded-none">
+                          {selectedMenuItem?.name || selectedMenuItem?.dish?.name}
+                        </AvatarFallback>
                       </Avatar>
-                      <div>{selectedDish?.name}</div>
+                      <div>{selectedMenuItem?.name || selectedMenuItem?.dish?.name}</div>
                     </div>
 
                     <DishesDialog
                       onChoose={(dish) => {
                         field.onChange(dish.id);
-                        setSelectedDish(dish);
+                        setSelectedMenuItem(dish);
                       }}
                     />
                   </FormItem>
@@ -157,7 +158,14 @@ export default function EditOrder({
                   <FormItem>
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
                       <FormLabel>Trạng thái</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={
+                          dataOrderDetail?.status === OrderStatus.Rejected ||
+                          dataOrderDetail?.status === OrderStatus.Paid
+                        }
+                      >
                         <FormControl className="col-span-3">
                           <SelectTrigger className="w-50">
                             <SelectValue placeholder="Trạng thái" />

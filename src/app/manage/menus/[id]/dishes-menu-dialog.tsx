@@ -90,7 +90,8 @@ export default function DishesMenuDialog({
     page: 1,
     limit: 5, // nếu pagination = false thì page và limit không có ý nghĩa
   });
-  const data = listDishQuery.data?.payload.data.filter((item) => item.status !== DishStatus.Hidden) || [];
+  const data =
+    listDishQuery.data?.payload.data.filter((item) => item.status !== DishStatus.Discontinued) || [];
   const dataFiltered = data.filter((dish) => !listIdDish.includes(dish.id)); // lọc những món đã có trong menu
 
   const table = useReactTable({

@@ -1,5 +1,11 @@
 import { menuApiRequests } from "@/apiRequests/menu";
-import { AddDishToMenuType, MenuQueryType, UpdateMenuBodyType } from "@/schemaValidations/menu.schema";
+import {
+  AddDishToMenuType,
+  CreateMenuBodyType,
+  MenuQueryType,
+  UpdateDishInMenuType,
+  UpdateMenuBodyType,
+} from "@/schemaValidations/menu.schema";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useGetListMenuQuery = (params: MenuQueryType) => {
@@ -23,17 +29,28 @@ export const useGetMenuDetailQuery = ({ id, enabled }: { id: number; enabled: bo
   });
 };
 
-// export const useAddDishMutation = () => {
-//   const queryClient = useQueryClient();
-//   return useMutation({
-//     mutationFn: (body: CreateDishBodyType) => {
-//       return dishApiRequests.addDish(body);
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ["dishes"] });
-//     },
-//   });
-// };
+export const useGetMenuActiveQuery = () => {
+  return useQuery({
+    queryKey: ["menu-active"],
+    queryFn: () => {
+      return menuApiRequests.menuActive();
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const useAddMenuMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateMenuBodyType) => {
+      return menuApiRequests.addMenu(body);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menus"] });
+    },
+  });
+};
 
 export const useUpdateMenuMutation = () => {
   const queryClient = useQueryClient();
@@ -47,17 +64,17 @@ export const useUpdateMenuMutation = () => {
   });
 };
 
-// export const useDeleteDishMutation = () => {
-//   const queryClient = useQueryClient();
-//   return useMutation({
-//     mutationFn: (id: number) => {
-//       return dishApiRequests.deleteDish(id);
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ["dishes"] });
-//     },
-//   });
-// };
+export const useDeleteMenuMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => {
+      return menuApiRequests.deleteMenu(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menus"] });
+    },
+  });
+};
 
 export const useGetListItemMenuFromMenu = (idMenu: number) => {
   return useQuery({
@@ -70,6 +87,16 @@ export const useGetListItemMenuFromMenu = (idMenu: number) => {
   });
 };
 
+export const useGetMenuItemDetail = ({ id, enabled }: { id: number; enabled: boolean }) => {
+  return useQuery({
+    queryKey: ["menu-item", id],
+    queryFn: () => {
+      return menuApiRequests.menuItem(id);
+    },
+    enabled,
+  });
+};
+
 export const useAddMenuItemMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -77,6 +104,36 @@ export const useAddMenuItemMutation = () => {
       return menuApiRequests.addMenuItem(body);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menus"] });
+      queryClient.invalidateQueries({ queryKey: ["menu-active"] });
+      queryClient.invalidateQueries({ queryKey: ["menu-items"] });
+    },
+  });
+};
+
+export const useEditMenuItemMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ idMenuItem, body }: { idMenuItem: number; body: UpdateDishInMenuType }) => {
+      return menuApiRequests.editMenuItem(idMenuItem, body);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menus"] });
+      queryClient.invalidateQueries({ queryKey: ["menu-active"] });
+      queryClient.invalidateQueries({ queryKey: ["menu-items"] });
+    },
+  });
+};
+
+export const useDeleteMenuItemMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (idMenuItem: number) => {
+      return menuApiRequests.deleteMenuItem(idMenuItem);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menus"] });
+      queryClient.invalidateQueries({ queryKey: ["menu-active"] });
       queryClient.invalidateQueries({ queryKey: ["menu-items"] });
     },
   });

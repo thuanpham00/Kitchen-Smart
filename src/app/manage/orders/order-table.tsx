@@ -46,9 +46,9 @@ import { useGetOrderQuery, useUpdateOrderMutation } from "@/queries/useOrder";
 import { useGetListTableQuery } from "@/queries/useTable";
 import { TableListResType } from "@/schemaValidations/table.schema";
 import TableSkeleton from "@/app/manage/orders/table-skeleton";
-import socket from "@/utils/socket";
 import { toast } from "sonner";
 import { GuestCreateOrdersResType } from "@/schemaValidations/guest.schema";
+import { useAppStore } from "@/components/app-provider";
 
 const OrderTableContext = createContext({
   orderIdEdit: undefined as number | undefined,
@@ -241,6 +241,8 @@ const PAGE_SIZE = 10;
 const initFromDate = startOfDay(new Date());
 const initToDate = endOfDay(new Date());
 export default function OrderTable() {
+  const socket = useAppStore((state) => state.socket);
+
   const searchParam = useSearchParams();
   const [openStatusFilter, setOpenStatusFilter] = useState(false);
 
@@ -336,12 +338,12 @@ export default function OrderTable() {
   };
 
   useEffect(() => {
-    if (socket.connected) {
+    if (socket?.connected) {
       onConnect();
     }
 
     function onConnect() {
-      console.log(socket.id);
+      console.log(socket?.id);
     }
 
     function onDisconnect() {
@@ -386,21 +388,21 @@ export default function OrderTable() {
       refetchList();
     }
 
-    socket.on("update-order", onUpdateOrder);
-    socket.on("new-order", onNewOrder);
-    socket.on("payment", onPayment);
+    socket?.on("update-order", onUpdateOrder);
+    socket?.on("new-order", onNewOrder);
+    socket?.on("payment", onPayment);
 
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
+    socket?.on("connect", onConnect);
+    socket?.on("disconnect", onDisconnect);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      socket.off("update-order", onUpdateOrder);
-      socket.off("new-order", onNewOrder);
-      socket.off("payment", onPayment);
+      socket?.off("connect", onConnect);
+      socket?.off("disconnect", onDisconnect);
+      socket?.off("update-order", onUpdateOrder);
+      socket?.off("new-order", onNewOrder);
+      socket?.off("payment", onPayment);
     };
-  }, [refetch, fromDate, toDate]);
+  }, [refetch, fromDate, toDate, socket]);
 
   return (
     <OrderTableContext.Provider

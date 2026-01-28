@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 const authPath = ["/login"];
 const managePath = ["/manage"];
 const guestPath = ["/guest"];
+
+const onlyOwnerPath = ["/manage/accounts"];
 const privatePath = [...managePath, ...guestPath];
 
 export function middleware(request: NextRequest) {
@@ -31,7 +33,7 @@ export function middleware(request: NextRequest) {
     // 2.2 trường hợp đăng nhập rồi và AT trong cookie hết hạn
     if (privatePath.some((path) => pathname.startsWith(path)) && !accessToken && refreshToken) {
       const url = new URL("/refresh-token", request.url);
-      // xử lý case AT tại cookie bị xóa redirect sang /logout để xóa RT luôn và redirect sang /login
+      // xử lý case AT tại cookie bị xóa redirect sang /refresh-token để lấy AT mới
       url.searchParams.set("refreshToken", refreshToken ?? "");
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
@@ -39,9 +41,12 @@ export function middleware(request: NextRequest) {
 
     // 2.3 Vào không đúng role, redirect về trang chủ
     const role = decodeToken(refreshToken).role;
+    // ko phải owner mà vào các trang chỉ dành cho owner
+    const isNotOwnerPath = role !== Role.Owner && onlyOwnerPath.some((path) => pathname.startsWith(path));
     if (
       (role === Role.Guest && managePath.some((path) => pathname.startsWith(path))) ||
-      (role !== Role.Guest && guestPath.some((path) => pathname.startsWith(path)))
+      (role !== Role.Guest && guestPath.some((path) => pathname.startsWith(path))) ||
+      isNotOwnerPath
     ) {
       return NextResponse.redirect(new URL("/", request.url));
     }

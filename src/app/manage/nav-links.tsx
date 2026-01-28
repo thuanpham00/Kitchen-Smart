@@ -1,5 +1,6 @@
 "use client";
 import menuItems from "@/app/manage/menuItems";
+import { useAppStore } from "@/components/app-provider";
 import { Tooltip, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Settings } from "lucide-react";
@@ -9,6 +10,7 @@ import { usePathname } from "next/navigation";
 
 export default function NavLinks() {
   const pathname = usePathname();
+  const isRole = useAppStore((state) => state.isRole);
 
   return (
     <TooltipProvider>
@@ -30,6 +32,7 @@ export default function NavLinks() {
           </Link>
 
           {menuItems.map((Item, index) => {
+            if (!Item.roles.includes(isRole as "Owner" | "Employee")) return null;
             const isActive = pathname === Item.href;
             return (
               <Tooltip key={index}>
@@ -41,7 +44,7 @@ export default function NavLinks() {
                       {
                         "bg-accent text-accent-foreground": isActive,
                         "text-muted-foreground": !isActive,
-                      }
+                      },
                     )}
                   >
                     <Item.Icon className="h-5 w-5" />
@@ -63,7 +66,7 @@ export default function NavLinks() {
                   {
                     "bg-accent text-accent-foreground": pathname === "/manage/setting",
                     "text-muted-foreground": pathname !== "/manage/setting",
-                  }
+                  },
                 )}
               >
                 <Settings className="h-5 w-5" />

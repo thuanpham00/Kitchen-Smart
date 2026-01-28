@@ -119,7 +119,7 @@ export default function MenuOrder() {
             </div>
 
             {/* Category Items */}
-            <div className="space-y-3">
+            <div className="space-y-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {items.map((menuItem) => {
                 const dish = menuItem.dish;
                 const hasDiscount = menuItem.price < dish.price;
@@ -186,9 +186,23 @@ export default function MenuOrder() {
           </div>
         ))}
       </div>
-      <div className="sticky bottom-0 border-t-2 pt-2">
+      <div className="sticky bottom-0 border-t-2 pt-2 flex justify-between gap-2">
+        <div className="flex gap-2">
+          <Button
+            className="w-52 block text-center bg-green-500 hover:bg-green-600 text-white"
+            onClick={() => toast.info("Chức năng đang phát triển")}
+          >
+            <span>Chatbot tư vấn</span>
+          </Button>
+          <Button
+            className="w-48 block text-center bg-yellow-500 hover:bg-yellow-600 text-white"
+            onClick={() => toast.info("Chức năng đang phát triển")}
+          >
+            <span>Gọi nhân viên</span>
+          </Button>
+        </div>
         <Button
-          className="w-full justify-between"
+          className="w-62 justify-between"
           onClick={() => {
             if (orders.length === 0) {
               toast.error("Vui lòng chọn món ăn trước khi gọi món");

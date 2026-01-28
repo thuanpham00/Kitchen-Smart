@@ -3,7 +3,6 @@ import { useGuestOrderQuery } from "@/queries/useGuest";
 import Image from "next/image";
 import { OrderStatus } from "@/constants/type";
 import { useEffect } from "react";
-import socket from "@/utils/socket";
 import {
   CreateOrdersResType,
   PayGuestOrdersResType,
@@ -11,6 +10,7 @@ import {
 } from "@/schemaValidations/order.schema";
 import { toast } from "sonner";
 import { formatCurrency, getVietnameseOrderStatus } from "../../../lib/utils";
+import { useAppStore } from "@/components/app-provider";
 
 const orderStatusMap = {
   [OrderStatus.Pending]: {
@@ -36,6 +36,7 @@ const orderStatusMap = {
 };
 
 export default function OrdersCart() {
+  const socket = useAppStore((state) => state.socket);
   const { data, refetch } = useGuestOrderQuery();
   const listOrder = data?.payload.data || [];
 
@@ -78,12 +79,12 @@ export default function OrdersCart() {
   );
 
   useEffect(() => {
-    if (socket.connected) {
+    if (socket?.connected) {
       onConnect();
     }
 
     function onConnect() {
-      console.log(socket.id);
+      console.log(socket?.id);
     }
 
     function onDisconnect() {
@@ -119,21 +120,21 @@ export default function OrdersCart() {
       refetch();
     }
 
-    socket.on("update-order", onUpdateOrder);
-    socket.on("payment", onPayment);
+    socket?.on("update-order", onUpdateOrder);
+    socket?.on("payment", onPayment);
 
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-    socket.on("new-order", onNewOrder);
+    socket?.on("connect", onConnect);
+    socket?.on("disconnect", onDisconnect);
+    socket?.on("new-order", onNewOrder);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      socket.off("update-order", onUpdateOrder);
-      socket.off("payment", onPayment);
-      socket.off("new-order", onNewOrder);
+      socket?.off("connect", onConnect);
+      socket?.off("disconnect", onDisconnect);
+      socket?.off("update-order", onUpdateOrder);
+      socket?.off("payment", onPayment);
+      socket?.off("new-order", onNewOrder);
     };
-  }, [refetch]);
+  }, [refetch, socket]);
 
   return (
     <div className="space-y-4">

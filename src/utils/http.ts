@@ -61,7 +61,7 @@ export const isClient = typeof window !== "undefined";
 const request = async <Response>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   url: string,
-  options?: CustomOptions | undefined
+  options?: CustomOptions | undefined,
 ) => {
   let body: FormData | string | undefined = undefined;
   if (options?.body instanceof FormData) {
@@ -112,7 +112,7 @@ const request = async <Response>(
         data as {
           status: 422;
           payload: EntityErrorPayload;
-        }
+        },
       );
     } else if (res.status === AUTHENTICATION_ERROR_STATUS) {
       // xử lý token hết hạn hoặc ko hợp lệ thì logout - xử lý ở client
@@ -149,6 +149,10 @@ const request = async <Response>(
     // chỉ chạy ở client - route này là route handler của nextjs
     if (["api/auth/login", "api/guest/auth/login"].some((item) => item === normalizePath(url))) {
       const { accessToken, refreshToken } = (payload as LoginResType).data;
+      setAccessTokenFromLocalStorage(accessToken);
+      setRefreshTokenFromLocalStorage(refreshToken);
+    } else if (["api/auth/login-oauth"].some((item) => item === normalizePath(url))) {
+      const { accessToken, refreshToken } = payload as any;
       setAccessTokenFromLocalStorage(accessToken);
       setRefreshTokenFromLocalStorage(refreshToken);
     } else if (["api/auth/logout", "api/guest/auth/logout"].some((item) => item === normalizePath(url))) {

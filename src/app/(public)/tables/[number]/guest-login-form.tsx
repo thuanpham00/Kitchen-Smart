@@ -8,19 +8,21 @@ import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GuestLoginBody, GuestLoginBodyType } from "@/schemaValidations/guest.schema";
 import { useGuestLoginMutation } from "@/queries/useGuest";
-import { handleErrorApi } from "@/lib/utils";
+import { generateSocket, handleErrorApi } from "@/lib/utils";
 import { toast } from "sonner";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useAppStore } from "@/components/app-provider";
 
 export default function GuestLoginForm() {
+  const setSocket = useAppStore((state) => state.setSocket);
+  const setIsRole = useAppStore((state) => state.setIsRole);
+
   const searchParams = useSearchParams();
   const params = useParams();
   const tokenTable = searchParams.get("token");
   const tableNumber = Number(params.number);
   const router = useRouter();
-  const setIsRole = useAppStore((state) => state.setIsRole);
   const useGuestLogin = useGuestLoginMutation();
   const form = useForm<GuestLoginBodyType>({
     resolver: zodResolver(GuestLoginBody),
@@ -45,6 +47,8 @@ export default function GuestLoginForm() {
         duration: 2000,
       });
       setIsRole(result.payload.data.guest.role);
+      setSocket(generateSocket(result.payload.data.accessToken)); // khởi tạo socket khi login thành công
+
       router.push("/guest/menu");
     } catch (error) {
       handleErrorApi({

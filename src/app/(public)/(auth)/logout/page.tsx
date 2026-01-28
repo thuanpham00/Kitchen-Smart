@@ -8,7 +8,10 @@ import { Suspense, useEffect } from "react";
 // dành cho xử lý case bị lỗi 401 chạy trên server component - case 401 client thì xử lý luôn ở axios interceptor
 // sẽ redirect sang /logout để xử lý (xóa token trong LS và xóa token trong cookie) và redirect về /login
 function Logout() {
+  const socket = useAppStore((state) => state.socket);
+  const setSocket = useAppStore((state) => state.setSocket);
   const setIsRole = useAppStore((state) => state.setIsRole);
+
   const { mutateAsync } = useLogoutMutation();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,11 +26,13 @@ function Logout() {
       mutateAsync().then(() => {
         router.push("/login");
         setIsRole(undefined);
+        setSocket(undefined);
+        socket?.disconnect();
       });
     } else {
       router.push("/"); // nếu url ko đúng thì về trang chủ
     }
-  }, [accessTokenFromURL, mutateAsync, refreshTokenFromURL, router, setIsRole]);
+  }, [accessTokenFromURL, mutateAsync, refreshTokenFromURL, router, setIsRole, setSocket, socket]);
   return <div>Logout page</div>;
 }
 

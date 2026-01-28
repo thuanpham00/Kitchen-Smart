@@ -18,8 +18,11 @@ import { useAppStore } from "@/components/app-provider";
 
 // những trang cần login thì ko cần seo nên cứ gọi api ở client thoải mái
 export default function DropdownAvatar() {
-  const logoutMutation = useLogoutMutation();
+  const socket = useAppStore((state) => state.socket);
+  const setSocket = useAppStore((state) => state.setSocket);
   const setIsRole = useAppStore((state) => state.setIsRole);
+
+  const logoutMutation = useLogoutMutation();
 
   const { data } = useGetMeQuery({
     queryKey: "profile-me",
@@ -34,6 +37,8 @@ export default function DropdownAvatar() {
       await logoutMutation.mutateAsync();
       router.push("/");
       setIsRole(undefined);
+      setSocket(undefined);
+      socket?.disconnect();
     } catch (error) {
       handleErrorApi({
         errors: error,

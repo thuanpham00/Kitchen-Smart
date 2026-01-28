@@ -16,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { useGetEmployeeDetailQuery, useUpdateEmployeeMutation } from "@/queries/useAccount";
@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import { useUploadMutation } from "@/queries/useMedia";
 import { handleErrorApi } from "@/lib/utils";
 import InputPassword from "@/app/manage/setting/input-password";
+import { Role, RoleValues } from "@/constants/type";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function EditEmployee({
   id,
@@ -49,6 +51,7 @@ export default function EditEmployee({
       changePassword: false,
       password: undefined, // changePassword true thì mới validate mấy trường này và trường này khởi tạo undefined -> "" sẽ báo lỗi zod
       confirmPassword: undefined, // changePassword true thì mới validate mấy trường này và trường này khởi tạo undefined -> "" sẽ báo lỗi zod
+      role: Role.Employee,
     },
   });
 
@@ -66,6 +69,7 @@ export default function EditEmployee({
         changePassword: form.getValues("changePassword"), // lấy giá trị khởi tạo
         password: form.getValues("password"),
         confirmPassword: form.getValues("confirmPassword"),
+        role: dataAccountDetail.role,
       });
     }
   }, [dataAccountDetail, form]);
@@ -192,6 +196,7 @@ export default function EditEmployee({
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="email"
@@ -205,6 +210,39 @@ export default function EditEmployee({
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="grid gap-2">
+                      <Label htmlFor="role">Vai trò</Label>
+                      <div className="w-full">
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn vai trò" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="w-full">
+                            {RoleValues.map((category) => {
+                              if (category === Role.Guest) return null;
+                              return (
+                                <SelectItem key={category} value={category}>
+                                  {category}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="changePassword"

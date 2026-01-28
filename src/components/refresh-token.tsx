@@ -8,7 +8,9 @@ import { useEffect } from "react";
 // component dùng để kiểm tra và refresh token liên tục khi người dùng truy cập các trang private
 const UNAUTHORIZED_PATHS = ["/login", "/logout", "/refresh-token"];
 export default function RefreshToken() {
+  const socket = useAppStore((state) => state.socket);
   const setIsRole = useAppStore((state) => state.setIsRole);
+  const setSocket = useAppStore((state) => state.setSocket);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -17,31 +19,51 @@ export default function RefreshToken() {
     if (UNAUTHORIZED_PATHS.includes(pathname)) return;
     let interval: any = null;
 
+    const onRefreshToken = (force?: boolean) =>
+      checkAndRefreshToken({
+        onError: () => {
+          clearInterval(interval); // dừng ngay lập tức interval đó, không cần component phải unmount.
+          router.push("/login");
+          setIsRole(undefined);
+          setSocket(undefined);
+          socket?.disconnect();
+        },
+        force,
+      });
+
     // Phải gọi lần đầu tiên, vì interval sẽ chạy sau thời gian TIMEOUT
-    checkAndRefreshToken({
-      onError: () => {
-        clearInterval(interval); // dừng ngay lập tức interval đó, không cần component phải unmount.
-        router.push("/login");
-        setIsRole(undefined);
-      },
-    });
+    onRefreshToken();
+
     const TIMEOUT = 1000;
-    interval = setInterval(
-      () =>
-        checkAndRefreshToken({
-          onError: () => {
-            clearInterval(interval);
-            router.push("/login");
-            setIsRole(undefined);
-          },
-        }),
-      TIMEOUT
-    );
+    interval = setInterval(onRefreshToken, TIMEOUT);
+
+    if (socket?.connected) {
+      onConnect();
+    }
+
+    function onConnect() {
+      console.log(socket?.id);
+    }
+
+    function onDisconnect() {
+      console.log("disconnected");
+    }
+
+    function onRefreshTokenSocket() {
+      onRefreshToken(true);
+    }
+
+    socket?.on("connect", onConnect);
+    socket?.on("disconnect", onDisconnect);
+    socket?.on("refresh-token", onRefreshTokenSocket); // làm mới token khi có sự thay đổi role account từ server - để từ đó dùng TOken mới có thể lấy được role mới
 
     return () => {
       clearInterval(interval);
+      socket?.off("connect", onConnect);
+      socket?.off("disconnect", onDisconnect);
+      socket?.off("refresh-token", onRefreshTokenSocket);
     };
-  }, [pathname, router, setIsRole]);
+  }, [pathname, router, setIsRole, socket, setSocket]);
 
   return null;
 }

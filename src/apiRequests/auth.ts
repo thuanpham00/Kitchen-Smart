@@ -1,3 +1,4 @@
+import { OauthLoginBodyType } from "@/app/api/auth/login-oauth/route";
 import {
   LoginBodyType,
   LoginResType,
@@ -26,7 +27,7 @@ export const authRequests = {
   logout_backend: async (
     body: LogoutBodyType & {
       accessToken: string;
-    }
+    },
   ) => {
     return http.post<MessageResType>(
       `/auth/logout`,
@@ -37,7 +38,7 @@ export const authRequests = {
         headers: {
           Authorization: `Bearer ${body.accessToken}`, // vì ở server nên http sẽ ko tự động gán AT cần set thủ công
         },
-      }
+      },
     );
   },
 
@@ -48,5 +49,11 @@ export const authRequests = {
   },
   refreshToken_backend: async (data: RefreshTokenBodyType) => {
     return http.post<RefreshTokenResType>(`/auth/refresh-token`, data);
+  },
+
+  login_google_nextjs: async (data: OauthLoginBodyType) => {
+    return http.post<LoginResType>("/api/auth/login-oauth", data, {
+      baseUrl: "", // sử dụng baseUrl trống để gọi API nội bộ của Next.js
+    });
   },
 };

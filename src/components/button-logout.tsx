@@ -7,7 +7,10 @@ import { useGuestLogoutMutation } from "@/queries/useGuest";
 import { useRouter } from "next/navigation";
 
 export default function ButtonLogout() {
+  const socket = useAppStore((state) => state.socket);
+  const setSocket = useAppStore((state) => state.setSocket);
   const setIsRole = useAppStore((state) => state.setIsRole);
+
   const isAuth = useAppStore((state) => state.isAuth);
   const isRole = useAppStore((state) => state.isRole);
 
@@ -27,6 +30,8 @@ export default function ButtonLogout() {
       await checkRole().mutateAsync();
       router.push("/");
       setIsRole(undefined);
+      setSocket(undefined);
+      socket?.disconnect();
     } catch (error) {
       handleErrorApi({
         errors: error,

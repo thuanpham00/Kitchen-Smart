@@ -9,11 +9,31 @@ import { LoginBody, LoginBodyType } from "@/schemaValidations/auth.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLoginMutation } from "@/queries/useAuth";
 import { toast } from "sonner";
-import { handleErrorApi } from "@/lib/utils";
+import { generateSocket, handleErrorApi } from "@/lib/utils";
 import { Suspense, useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/components/app-provider";
+import { envConfig } from "@/utils/config";
+import Link from "next/link";
+
+const getOauthGoogleUrl = () => {
+  const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
+  const options = {
+    redirect_uri: envConfig.NEXT_PUBLIC_GOOGLE_AUTHORIZED_REDIRECT_URI,
+    client_id: envConfig.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    access_type: "offline",
+    response_type: "code",
+    prompt: "consent",
+    scope: [
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ].join(" "),
+  };
+  const qs = new URLSearchParams(options);
+  return `${rootUrl}?${qs.toString()}`;
+};
+const googleOauthUrl = getOauthGoogleUrl();
 
 function Login() {
   /**
@@ -22,6 +42,8 @@ function Login() {
       Gọi là dùng `Next.js Server` làm `proxy trung gian`
    */
   const setIsRole = useAppStore((state) => state.setIsRole);
+  const setSocket = useAppStore((state) => state.setSocket);
+
   const searchParams = useSearchParams();
   const clearTokens = searchParams.get("clearTokens");
 
@@ -45,6 +67,7 @@ function Login() {
       });
       router.push("/manage/dashboard");
       setIsRole(result.payload.data.account.role);
+      setSocket(generateSocket(result.payload.data.accessToken)); // khởi tạo socket khi login thành công
     } catch (error) {
       handleErrorApi({
         errors: error,
@@ -118,9 +141,20 @@ function Login() {
               <Button type="submit" className="w-full">
                 Đăng nhập
               </Button>
-              <Button variant="outline" className="w-full" type="button">
-                Đăng nhập bằng Google
-              </Button>
+              <Link
+                href={googleOauthUrl}
+                className="mt-2 border border-black/80 dark:border-white rounded-md w-full mx-auto p-2 flex items-center justify-center gap-2"
+              >
+                <div
+                  className="w-5 h-5"
+                  style={{
+                    backgroundImage: `url("https://accounts.scdn.co/sso/images/new-google-icon.72fd940a229bc94cf9484a3320b3dccb.svg")`,
+                    backgroundPosition: "center center",
+                    backgroundRepeat: "no-repeat",
+                  }}
+                ></div>
+                <span className="text-sm font-semibold">Đăng nhập với Google</span>
+              </Link>
             </div>
           </form>
         </Form>

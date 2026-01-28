@@ -13,6 +13,7 @@ import { TokenPayload } from "@/types/jwt.types";
 import { format } from "date-fns";
 import guestApiRequest from "@/apiRequests/guest";
 import { BookX, CookingPot, HandCoins, Loader, Truck } from "lucide-react";
+import { io } from "socket.io-client";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -67,7 +68,11 @@ export const removeTokenFromLocalStorage = () => {
   isClient && localStorage.removeItem("refreshToken");
 };
 
-export const checkAndRefreshToken = async (params?: { onError?: () => void; onSuccess?: () => void }) => {
+export const checkAndRefreshToken = async (params?: {
+  onError?: () => void;
+  onSuccess?: () => void;
+  force?: boolean;
+}) => {
   const accessToken = getAccessTokenFromLocalStorage();
   const refreshToken = getRefreshTokenFromLocalStorage();
   if (!accessToken || !refreshToken) return;
@@ -90,7 +95,7 @@ export const checkAndRefreshToken = async (params?: { onError?: () => void; onSu
   // thì mình kiểm tra còn 1/3 thời gian (3s) thì mình sẽ gọi refresh token
   // thời gian còn lại tính dựa trên công thức decodedAccessToken.exp - now
   // thời gian hết hạn của access token dựa trên công thức: decodedAccessToken.exp - decodedAccessToken.iat
-  if (decodedAccessToken.exp - now < (decodedAccessToken.exp - decodedAccessToken.iat) / 3) {
+  if (params?.force || decodedAccessToken.exp - now < (decodedAccessToken.exp - decodedAccessToken.iat) / 3) {
     // goi refresh token
     try {
       const role = decodedRefreshToken.role;
@@ -191,4 +196,12 @@ export const OrderStatusIcon = {
   [OrderStatus.Rejected]: BookX,
   [OrderStatus.Delivered]: Truck,
   [OrderStatus.Paid]: HandCoins,
+};
+
+export const generateSocket = (accessToken: string) => {
+  return io(envConfig.NEXT_PUBLIC_API_ENDPOINT, {
+    auth: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
 };

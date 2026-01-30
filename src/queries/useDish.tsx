@@ -1,5 +1,11 @@
 import { dishApiRequests } from "@/apiRequests/dish";
-import { CreateDishBodyType, DishQueryType, UpdateDishBodyType } from "@/schemaValidations/dish.schema";
+import {
+  AddIngredientToDishType,
+  CreateDishBodyType,
+  DishQueryType,
+  UpdateDishBodyType,
+  UpdateIngredientInDishType,
+} from "@/schemaValidations/dish.schema";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useGetListDishQuery = (params: DishQueryType) => {
@@ -18,6 +24,16 @@ export const useGetDishDetailQuery = ({ id, enabled }: { id: number; enabled: bo
     queryKey: ["dish-detail", id],
     queryFn: () => {
       return dishApiRequests.getDishById(id);
+    },
+    enabled,
+  });
+};
+
+export const useGetDishIngredientItem = ({ id, enabled }: { id: number; enabled: boolean }) => {
+  return useQuery({
+    queryKey: ["dish-ingredient-item", id],
+    queryFn: () => {
+      return dishApiRequests.dishIngredientItem(id);
     },
     enabled,
   });
@@ -55,6 +71,59 @@ export const useDeleteDishMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dishes"] });
+    },
+  });
+};
+
+export const useGetListDishIngredient = (idDish: number) => {
+  return useQuery({
+    queryKey: ["dish-ingredients", idDish],
+    queryFn: () => {
+      return dishApiRequests.listIngredientDish(idDish);
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60, // 1 minute
+  });
+};
+
+export const useAddIngredientToDishMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: AddIngredientToDishType) => {
+      return dishApiRequests.addIngredientDish(body);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dish-ingredients"] });
+    },
+  });
+};
+
+export const useEditIngredientToDishMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      idDishIngredient,
+      body,
+    }: {
+      idDishIngredient: number;
+      body: UpdateIngredientInDishType;
+    }) => {
+      return dishApiRequests.updateIngredientDish(idDishIngredient, body);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dish-ingredients"] });
+    },
+  });
+};
+
+export const useDeleteDishIngredientMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (idDishIngredient: number) => {
+      return dishApiRequests.deleteIngredientDish(idDishIngredient);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dish-ingredients"] });
     },
   });
 };

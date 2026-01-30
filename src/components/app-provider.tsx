@@ -22,16 +22,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// const AppContext = createContext({
-//   isRole: undefined as RoleType | undefined,
-//   setIsRole: (isRole: RoleType | undefined) => {},
-//   isAuth: false,
-// });
-
-// export const useAppContext = () => {
-//   return useContext(AppContext);
-// };
-
 type AppStoreType = {
   isAuth: boolean;
   isRole: RoleType | undefined;
@@ -58,16 +48,6 @@ export const useAppStore = create<AppStoreType>((set) => ({
 export default function AppProvider({ children }: { children: React.ReactNode }) {
   const setIsRole = useAppStore((state) => state.setIsRole);
   const setSocket = useAppStore((state) => state.setSocket);
-  // const [isRole, setIsRoleState] = useState<RoleType | undefined>(undefined);
-
-  // const setIsRole = (isRole?: RoleType | undefined) => {
-  //   setIsRoleState(isRole);
-  //   if (!isRole) {
-  //     removeTokenFromLocalStorage();
-  //   }
-  // };
-
-  // const isAuth = Boolean(isRole); // có role thì đã đăng nhập - ko có role thì chưa đăng nhập
 
   useEffect(() => {
     const accessToken = getAccessTokenFromLocalStorage();
@@ -79,13 +59,11 @@ export default function AppProvider({ children }: { children: React.ReactNode })
   }, [setIsRole, setSocket]);
 
   return (
-    // <AppContext.Provider value={{ isRole, setIsRole, isAuth }}>
     <QueryClientProvider client={queryClient}>
       <LogoutSocket />
       <RefreshToken />
       {children}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-    // </AppContext.Provider>
   );
 }

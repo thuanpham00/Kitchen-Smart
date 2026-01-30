@@ -2,11 +2,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +20,6 @@ import { formatCurrency, getVietnameseDishStatus, handleErrorApi } from "@/lib/u
 import { useRouter } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
 import { DishListResType, DishQueryType } from "@/schemaValidations/dish.schema";
-import EditDish from "@/app/manage/dishes/edit-dish";
 import AddDish from "@/app/manage/dishes/add-dish";
 import { useDeleteDishMutation, useGetListDishQuery } from "@/queries/useDish";
 import { toast } from "sonner";
@@ -31,6 +29,7 @@ import useDebounceInput from "@/hooks/useDebounceInput";
 import { DishStatus } from "@/constants/type";
 import { Badge } from "@/components/ui/badge";
 import SelectCategory from "@/app/manage/dishes/SelectCategory";
+import Link from "next/link";
 
 type DishItem = DishListResType["data"][0];
 
@@ -94,6 +93,16 @@ export const columns: ColumnDef<DishItem>[] = [
     cell: ({ row }) => <div className="capitalize">{formatCurrency(row.getValue("price"))}</div>,
   },
   {
+    accessorKey: "preparationTime",
+    header: "Thời gian chuẩn bị",
+    cell: ({ row }) => <div className="capitalize text-center">{row.getValue("preparationTime")} phút</div>,
+  },
+  {
+    accessorKey: "popularity",
+    header: "Độ phổ biến",
+    cell: ({ row }) => <div className="capitalize text-center">{row.getValue("popularity")}</div>,
+  },
+  {
     accessorKey: "status",
     header: "Trạng thái",
     cell: ({ row }) => {
@@ -116,22 +125,14 @@ export const columns: ColumnDef<DishItem>[] = [
     id: "actions",
     header: "Hành động",
     cell: function Actions({ row }) {
-      const { setDishIdEdit, setDishDelete } = useContext(DishTableContext);
-      const openEditDish = () => {
-        setDishIdEdit(row.original.id);
-      };
-
-      const openDeleteDish = () => {
-        setDishDelete(row.original);
-      };
       return (
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={openEditDish} className="bg-blue-500 hover:bg-blue-400 text-white">
-            Sửa
-          </Button>
-          <Button size="sm" onClick={openDeleteDish} className="bg-red-500 hover:bg-red-400 text-white">
-            Xóa
-          </Button>
+        <div>
+          <Link
+            href={`/manage/dishes/${row.original.id}`}
+            className="bg-blue-500 px-2 py-1 rounded-lg hover:bg-blue-400 text-white"
+          >
+            Chi tiết
+          </Link>
         </div>
       );
     },
@@ -253,8 +254,6 @@ export default function DishTable() {
   return (
     <DishTableContext.Provider value={{ dishIdEdit, setDishIdEdit, dishDelete, setDishDelete }}>
       <div className="w-full">
-        <EditDish id={dishIdEdit} setId={setDishIdEdit} />
-        <AlertDialogDeleteDish dishDelete={dishDelete} setDishDelete={setDishDelete} />
         <div className="flex items-center gap-2 py-4">
           <Input
             placeholder="Lọc tên"

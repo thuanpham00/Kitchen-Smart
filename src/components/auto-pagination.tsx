@@ -59,19 +59,18 @@ export default function AutoPagination({
       if (!dotBefore) {
         dotBefore = true;
         return (
-          <PaginationItem>
+          <PaginationItem key={`dot-before-${index}`}>
             <PaginationEllipsis />
           </PaginationItem>
         );
       }
       return null;
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const renderDotAfter = (index: number) => {
       if (!dotAfter) {
         dotAfter = true;
         return (
-          <PaginationItem>
+          <PaginationItem key={`dot-after-${index}`}>
             <PaginationEllipsis />
           </PaginationItem>
         );
@@ -96,7 +95,7 @@ export default function AutoPagination({
           return renderDotBefore(index);
         }
         return (
-          <PaginationItem key={index}>
+          <PaginationItem key={`page-${pageNumber}`}>
             {isLink ? (
               <PaginationLink
                 href={{

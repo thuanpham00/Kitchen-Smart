@@ -138,7 +138,7 @@ export default function AddOrder() {
           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Tạo đơn hàng</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-220 max-h-screen overflow-auto">
+      <DialogContent className="sm:max-w-300 w-full max-h-screen overflow-auto">
         <DialogHeader>
           <DialogTitle>Tạo đơn hàng</DialogTitle>
         </DialogHeader>
@@ -224,7 +224,7 @@ export default function AddOrder() {
               onChange={(event) => setSearchDish(event.target.value)}
               className="max-w-80 mb-4"
             />
-            <div className="h-100 overflow-auto flex gap-2 flex-col">
+            <div className="h-100 overflow-auto grid grid-cols-2 gap-4">
               {menuItemsFiltered
                 .filter((item) => item.status !== MenuItemStatus.HIDDEN)
                 .map((item, index) => (

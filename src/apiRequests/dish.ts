@@ -1,9 +1,13 @@
 import {
+  AddIngredientToDishType,
   CreateDishBodyType,
+  DishIngredientListResType,
+  DishIngredientResType,
   DishListResType,
   DishQueryType,
   DishResType,
   UpdateDishBodyType,
+  UpdateIngredientInDishType,
 } from "@/schemaValidations/dish.schema";
 import http from "@/utils/http";
 import queryString from "query-string";
@@ -17,11 +21,7 @@ export const dishApiRequests = {
     - Dùng cache: 'force-cache: Cache khi build. Có thể khiến page thành Static Rendering nếu các điều kiện xung quanh cho phép (ví dụ không dùng dynamic function như cookies()...)
    */
   list: (params: DishQueryType) => {
-    return http.get<DishListResType>("/dishes?" + queryString.stringify(params), {
-      next: {
-        tags: ["dishes"],
-      },
-    });
+    return http.get<DishListResType>("/dishes?" + queryString.stringify(params));
   },
   addDish: (body: CreateDishBodyType) => {
     return http.post<DishResType>("/dishes", body);
@@ -34,5 +34,22 @@ export const dishApiRequests = {
   },
   getDishById: (id: number) => {
     return http.get<DishResType>(`/dishes/${id}`);
+  },
+
+  // ingredient in dish
+  listIngredientDish: (idDish: number) => {
+    return http.get<DishIngredientListResType>(`/dishes/${idDish}/ingredients`);
+  },
+  dishIngredientItem: (idDishIngredient: number) => {
+    return http.get<DishIngredientResType>(`/dishes/ingredient-item/${idDishIngredient}`);
+  },
+  addIngredientDish: (body: AddIngredientToDishType) => {
+    return http.post<DishIngredientListResType>(`/dishes/ingredient-item`, body);
+  },
+  updateIngredientDish: (idDishIngredient: number, body: UpdateIngredientInDishType) => {
+    return http.put<DishIngredientListResType>(`/dishes/ingredient-item/${idDishIngredient}`, body);
+  },
+  deleteIngredientDish: (idDishIngredient: number) => {
+    return http.delete<DishIngredientListResType>(`/dishes/ingredient-item/${idDishIngredient}`);
   },
 };

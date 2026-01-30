@@ -100,7 +100,7 @@ export const columns: ColumnDef<MenuItem>[] = [
     header: "Hành động",
     cell: function Actions({ row }) {
       return (
-        <div className="flex items-center gap-2">
+        <div>
           <Link
             href={`/manage/menus/${row.original.id}`}
             className="bg-blue-500 px-2 py-1 rounded-lg hover:bg-blue-400 text-white"

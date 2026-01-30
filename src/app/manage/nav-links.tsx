@@ -33,7 +33,7 @@ export default function NavLinks() {
 
           {menuItems.map((Item, index) => {
             if (!Item.roles.includes(isRole as "Owner" | "Employee")) return null;
-            const isActive = pathname === Item.href;
+            const isActive = pathname.includes(Item.href);
             return (
               <Tooltip key={index}>
                 <TooltipTrigger asChild>

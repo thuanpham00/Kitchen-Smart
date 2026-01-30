@@ -43,9 +43,15 @@ export default function AddDish() {
       name: "",
       description: "",
       price: 0,
-      image: undefined,
       status: DishStatus.Discontinued,
+      image: undefined,
       categoryId: undefined,
+
+      spicyLevel: 0, // độ cay
+      preparationTime: 0, // thời gian chuẩn bị
+      popularity: 0, // lượt order món ăn
+      dietaryTags: "", // phân loại món ăn
+      searchKeywords: "", // từ khóa tìm kiếm
     },
   });
   const image = form.watch("image");
@@ -73,7 +79,8 @@ export default function AddDish() {
 
   const submit = async (values: CreateDishBodyType) => {
     if (addDishMutation.isPending) return;
-    let body = values;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any = values;
     try {
       if (file) {
         const formData = new FormData();
@@ -120,7 +127,7 @@ export default function AddDish() {
           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Thêm món ăn</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-150 max-h-screen overflow-auto">
+      <DialogContent className="sm:max-w-300 max-h-screen overflow-auto">
         <DialogHeader>
           <DialogTitle>Thêm món ăn</DialogTitle>
         </DialogHeader>
@@ -134,152 +141,250 @@ export default function AddDish() {
               console.log(err);
             })}
           >
-            <div className="grid gap-4 py-4">
-              <FormField
-                control={form.control}
-                name="image"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2 items-start justify-start">
-                      <Avatar className="aspect-square w-25 h-25 rounded-md object-cover">
-                        <AvatarImage src={previewAvatarFromFile} />
-                        <AvatarFallback className="rounded-none">{name || "Ảnh món ăn"}</AvatarFallback>
-                      </Avatar>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={imageInputRef}
-                        onChange={(e) => {
-                          handleChangeFile(e);
-                          field.onChange("http://localhost:3000/" + field.name);
-                        }}
-                        className="hidden"
-                      />
-                      <button
-                        className="flex aspect-square w-25 items-center justify-center rounded-md border border-dashed"
-                        type="button"
-                        onClick={() => imageInputRef.current?.click()}
-                      >
-                        <Upload className="h-4 w-4 text-muted-foreground" />
-                        <span className="sr-only">Upload</span>
-                      </button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="image"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex gap-2 items-start justify-start">
+                    <Avatar className="aspect-square w-25 h-25 rounded-md object-cover">
+                      <AvatarImage src={previewAvatarFromFile} />
+                      <AvatarFallback className="rounded-none">{name || "Ảnh món ăn"}</AvatarFallback>
+                    </Avatar>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={imageInputRef}
+                      onChange={(e) => {
+                        handleChangeFile(e);
+                        field.onChange("http://localhost:3000/" + field.name);
+                      }}
+                      className="hidden"
+                    />
+                    <button
+                      className="flex aspect-square w-25 items-center justify-center rounded-md border border-dashed"
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                      <span className="sr-only">Upload</span>
+                    </button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="name">Tên món ăn</Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Input id="name" className="w-full" {...field} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="name">Tên món ăn</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Input id="name" className="w-full" {...field} />
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="price">Giá</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Input
+                            id="price"
+                            className="w-full"
+                            {...field}
+                            type="number"
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="description">Mô tả món ăn</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Textarea id="description" className="w-full" {...field} />
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="categoryId">Danh mục</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Chọn danh mục" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {dishCategories.map((category) => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="status">Trạng thái</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Chọn trạng thái" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {DishStatusValues.map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {getVietnameseDishStatus(status)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
                         <FormMessage />
                       </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="price">Giá</Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Input
-                          id="price"
-                          className="w-full"
-                          {...field}
-                          type="number"
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                        />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="flex flex-col gap-4">
+                <FormField
+                  control={form.control}
+                  name="dietaryTags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="dietaryTags">Phân loại món ăn</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Textarea id="dietaryTags" className="w-full" {...field} />
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="preparationTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="preparationTime">Thời gian chuẩn bị</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Input
+                            id="preparationTime"
+                            className="w-full"
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="spicyLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="spicyLevel">Mức độ cay</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Select
+                            onValueChange={(value) => field.onChange(Number(value))}
+                            defaultValue={field.value !== undefined ? String(field.value) : "0"}
+                            value={field.value !== undefined ? String(field.value) : "0"}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Chọn mức độ cay" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value={"0"}>Không cay - 0</SelectItem>
+                              <SelectItem value={"1"}>Ít cay - 1</SelectItem>
+                              <SelectItem value={"2"}>Vừa cay - 2</SelectItem>
+                              <SelectItem value={"3"}>Rất cay - 3</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
                         <FormMessage />
                       </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="description">Mô tả món ăn</Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Textarea id="description" className="w-full" {...field} />
-                        <FormMessage />
+                <FormField
+                  control={form.control}
+                  name="searchKeywords"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="searchKeywords">Từ khóa tìm kiếm</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Textarea id="searchKeywords" className="w-full" {...field} />
+                          <FormMessage />
+                        </div>
                       </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="categoryId">Danh mục</Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn danh mục" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {dishCategories.map((category) => (
-                              <SelectItem key={category.id} value={category.id.toString()}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </div>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                      <Label htmlFor="status">Trạng thái</Label>
-                      <div className="col-span-3 w-full space-y-2">
-                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn trạng thái" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {DishStatusValues.map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {getVietnameseDishStatus(status)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <FormMessage />
-                    </div>
-                  </FormItem>
-                )}
-              />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
           </form>
         </Form>

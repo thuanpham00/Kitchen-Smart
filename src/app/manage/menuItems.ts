@@ -1,5 +1,15 @@
 import { Role } from "@/constants/type";
-import { Home, ShoppingCart, Users2, Salad, Table, List, Hamburger, Columns3 } from "lucide-react";
+import {
+  Home,
+  ShoppingCart,
+  Users2,
+  Salad,
+  Table,
+  List,
+  Columns3,
+  Headset,
+  ShoppingBasket,
+} from "lucide-react";
 
 const menuItems = [
   {
@@ -40,8 +50,14 @@ const menuItems = [
   },
   {
     title: "Nguyên liệu",
-    Icon: Hamburger,
+    Icon: ShoppingBasket,
     href: "/manage/ingredients",
+    roles: [Role.Owner, Role.Employee],
+  },
+  {
+    title: "Gọi phục vụ",
+    Icon: Headset,
+    href: "/manage/accounts",
     roles: [Role.Owner, Role.Employee],
   },
   {

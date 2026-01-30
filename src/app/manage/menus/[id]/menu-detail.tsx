@@ -20,7 +20,7 @@ import {
 } from "@tanstack/react-table";
 import { useDeleteMenuItemMutation, useGetListItemMenuFromMenu } from "@/queries/useMenu";
 import { MenuItemListResType } from "@/schemaValidations/menu.schema";
-import { formatCurrency, formatDateTimeToLocaleString } from "@/lib/utils";
+import { cn, formatCurrency, formatDateTimeToLocaleString } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { useGetListDishCategoryNameQuery } from "@/queries/useDishCategory";
 
 // sử dụng trong phạm vị component AccountTable và các component con của nó
 const MenuTableContext = createContext<{
@@ -127,6 +131,10 @@ const columns: ColumnDef<MenuItem>[] = [
     cell: ({ row }) => {
       const dish = row.original.dish;
       return <div className="underline font-semibold">{dish.category.name}</div>;
+    },
+    filterFn: (row, columnId, filterValue) => {
+      // row.original.dish.category.id là số, filterValue là string
+      return filterValue ? row.original.dish.category.id.toString() === filterValue : true;
     },
   },
   {
@@ -280,6 +288,9 @@ export default function MenuDetail() {
 
   const [menuItemIdEdit, setMenuItemIdEdit] = useState<number>();
   const [menuItemDelete, setMenuItemDelete] = useState<MenuItem | null>(null);
+  const [openStatusFilter, setOpenStatusFilter] = useState(false);
+  const listNameDishCategory = useGetListDishCategoryNameQuery();
+  const dishCategories = listNameDishCategory.data?.payload.data || [];
 
   return (
     <MenuTableContext.Provider
@@ -292,7 +303,7 @@ export default function MenuDetail() {
       <div>
         <div className="w-full h-px bg-[#2e2f2f] my-8"></div>
         <div className="flex items-center mb-6">
-          <div className="text-lg font-semibold">Danh sách món ăn trong menu</div>
+          <div className="text-lg font-semibold">Danh sách món ăn trong menu - ({data.length} món)</div>
           <div className="ml-auto">
             <AddDishToMenuForm idMenu={Number(id)} dataMenuItemsCurrent={data} />
           </div>
@@ -302,8 +313,61 @@ export default function MenuDetail() {
           placeholder="Tên món ăn"
           value={(table.getColumn("dishName")?.getFilterValue() as string) ?? ""}
           onChange={(event) => table.getColumn("dishName")?.setFilterValue(event.target.value)}
-          className="max-w-80 mb-4"
+          className="max-w-80 mb-4 mr-2"
         />
+
+        <Popover open={openStatusFilter} onOpenChange={setOpenStatusFilter}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={openStatusFilter}
+              className="w-37.5 text-sm justify-between"
+            >
+              {(() => {
+                const filterValue = table.getColumn("category")?.getFilterValue();
+                if (!filterValue) return "Danh mục";
+                const found = dishCategories.find((cat) => cat.id.toString() === String(filterValue));
+                return found ? found.name : String(filterValue);
+              })()}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-50 p-0">
+            <Command>
+              <CommandGroup>
+                <CommandList>
+                  {dishCategories.map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      value={item.id.toString()}
+                      onSelect={(currentValue: string) => {
+                        table
+                          .getColumn("category")
+                          ?.setFilterValue(
+                            currentValue === table.getColumn("category")?.getFilterValue()
+                              ? ""
+                              : currentValue,
+                          );
+                        setOpenStatusFilter(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          table.getColumn("category")?.getFilterValue() === item.id.toString()
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      />
+                      {item.name}
+                    </CommandItem>
+                  ))}
+                </CommandList>
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
 
         <div className="rounded-md border">
           <Table>

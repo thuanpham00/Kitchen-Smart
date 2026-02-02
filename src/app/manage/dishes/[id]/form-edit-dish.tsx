@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,17 +7,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getVietnameseDishStatus, handleErrorApi } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UpdateDishBody, UpdateDishBodyType } from "@/schemaValidations/dish.schema";
 import { DishStatus, DishStatusValues } from "@/constants/type";
 import { Textarea } from "@/components/ui/textarea";
 import { useUploadMutation } from "@/queries/useMedia";
 import { useDeleteDishMutation, useGetDishDetailQuery, useUpdateDishMutation } from "@/queries/useDish";
 import { toast } from "sonner";
-import revalidateApiRequests from "@/apiRequests/revalidate";
 import { useGetListDishCategoryNameQuery } from "@/queries/useDishCategory";
 import { useRouter } from "next/navigation";
 import {
@@ -29,12 +28,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Select as SelectAntd } from "antd";
 
 export default function FormEditDish({ idDish }: { idDish?: number | undefined }) {
   const dishDetail = useGetDishDetailQuery({ id: idDish as number, enabled: Boolean(idDish) });
   const dataDishDetail = dishDetail.data?.payload.data;
   const listNameDishCategory = useGetListDishCategoryNameQuery();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const dishCategories = listNameDishCategory.data?.payload.data || [];
 
   const uploadMutation = useUploadMutation();
@@ -49,29 +48,32 @@ export default function FormEditDish({ idDish }: { idDish?: number | undefined }
       description: "",
       price: 0,
       image: undefined,
+
       status: DishStatus.Discontinued,
-      categoryId: undefined,
+      categoryId: "",
+      spicyLevel: 0,
 
       dietaryTags: "",
-      spicyLevel: 0,
       preparationTime: 0,
       searchKeywords: "",
       popularity: 0,
     },
   });
+
   const image = form.watch("image");
   const name = form.watch("name");
+
   const previewAvatarFromFile = file ? URL.createObjectURL(file) : image;
 
   useEffect(() => {
-    if (dataDishDetail && dishCategories.length > 0) {
+    if (dataDishDetail) {
       form.reset({
         name: dataDishDetail.name,
         description: dataDishDetail.description,
         price: dataDishDetail.price,
         image: dataDishDetail.image,
         status: dataDishDetail.status,
-        categoryId: dataDishDetail.categoryId.toString(),
+        categoryId: dataDishDetail?.categoryId.toString(),
 
         dietaryTags: dataDishDetail.dietaryTags || "",
         spicyLevel: dataDishDetail.spicyLevel,
@@ -99,6 +101,7 @@ export default function FormEditDish({ idDish }: { idDish?: number | undefined }
   const submit = async (values: UpdateDishBodyType) => {
     if (updateDishMutation.isPending) return;
     let body = values;
+    console.log(values);
     try {
       if (file) {
         const formData = new FormData();
@@ -129,7 +132,6 @@ export default function FormEditDish({ idDish }: { idDish?: number | undefined }
         searchKeywords: data.searchKeywords,
         popularity: data.popularity,
       });
-      await revalidateApiRequests("dishes");
 
       toast.success(message, {
         duration: 2000,
@@ -276,20 +278,18 @@ export default function FormEditDish({ idDish }: { idDish?: number | undefined }
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
                       <Label htmlFor="categoryId">Danh mục</Label>
                       <div className="col-span-3 w-full space-y-2">
-                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn danh mục" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {dishCategories.map((category) => (
-                              <SelectItem key={category.id} value={category.id.toString()}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SelectAntd
+                          className="dark:bg-[#212121]! dark:border-gray-600! dark:text-white!"
+                          value={field.value}
+                          style={{ width: 120 }}
+                          onChange={(value) => field.onChange(value)}
+                          options={[
+                            ...dishCategories.map((category) => ({
+                              label: category.name,
+                              value: category.id.toString(),
+                            })),
+                          ]}
+                        />
                         <FormMessage />
                       </div>
                     </div>
@@ -305,20 +305,18 @@ export default function FormEditDish({ idDish }: { idDish?: number | undefined }
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
                       <Label htmlFor="description">Trạng thái</Label>
                       <div className="col-span-3 w-full space-y-2">
-                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn trạng thái" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {DishStatusValues.map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {getVietnameseDishStatus(status)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SelectAntd
+                          className="dark:bg-[#212121]! dark:border-gray-600! dark:text-white! w-40!"
+                          value={field.value}
+                          style={{ width: 120 }}
+                          onChange={(value) => field.onChange(value)}
+                          options={[
+                            ...DishStatusValues.map((status) => ({
+                              label: getVietnameseDishStatus(status),
+                              value: status,
+                            })),
+                          ]}
+                        />
                       </div>
 
                       <FormMessage />
@@ -375,23 +373,30 @@ export default function FormEditDish({ idDish }: { idDish?: number | undefined }
                     <div className="grid grid-cols-4 items-center justify-items-start gap-4">
                       <Label htmlFor="spicyLevel">Mức độ cay</Label>
                       <div className="col-span-3 w-full space-y-2">
-                        <Select
-                          onValueChange={(value) => field.onChange(Number(value))}
-                          defaultValue={field.value !== undefined ? String(field.value) : "0"}
-                          value={field.value !== undefined ? String(field.value) : "0"}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn mức độ cay" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value={"0"}>Không cay - 0</SelectItem>
-                            <SelectItem value={"1"}>Ít cay - 1</SelectItem>
-                            <SelectItem value={"2"}>Vừa cay - 2</SelectItem>
-                            <SelectItem value={"3"}>Rất cay - 3</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <SelectAntd
+                          className="dark:bg-[#212121]! dark:border-gray-600! dark:text-white! w-40!"
+                          value={field.value !== undefined ? String(field.value) : ""}
+                          style={{ width: 120 }}
+                          onChange={(value) => field.onChange(Number(value))}
+                          options={[
+                            {
+                              label: "Không cay - 0",
+                              value: "0",
+                            },
+                            {
+                              label: "Ít cay - 1",
+                              value: "1",
+                            },
+                            {
+                              label: "Cay vừa - 2",
+                              value: "2",
+                            },
+                            {
+                              label: "Rất cay - 3",
+                              value: "3",
+                            },
+                          ]}
+                        />
                       </div>
 
                       <FormMessage />

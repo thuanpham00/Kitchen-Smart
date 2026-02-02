@@ -2,7 +2,7 @@
 import Quantity from "@/app/guest/menu/quantity";
 import { Button } from "@/components/ui/button";
 import { MenuItemStatus } from "@/constants/type";
-import { formatCurrency, handleErrorApi } from "@/lib/utils";
+import { decodeToken, formatCurrency, handleErrorApi } from "@/lib/utils";
 import { useGuestOrderMutation } from "@/queries/useGuest";
 import { GuestCreateOrdersBodyType } from "@/schemaValidations/guest.schema";
 import Image from "next/image";
@@ -19,18 +19,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useGetMenuActiveQuery } from "@/queries/useMenu";
+import { useGetMenuActiveQuery, useGetMenuSuggestedQuery } from "@/queries/useMenu";
 import { Badge } from "@/components/ui/badge";
+import logoFavourite from "../../../../public/images/favorites.png";
+import { useAppStore } from "@/components/app-provider";
 
 type OrderList = (GuestCreateOrdersBodyType[number] & {
   price: number;
 })[];
 
 export default function MenuOrder() {
+  const socket = useAppStore((state) => state.socket);
+  const infoGuest = useAppStore((state) => state.infoGuest);
   const orderMutation = useGuestOrderMutation();
-  const { data } = useGetMenuActiveQuery();
+  const { data: activeData } = useGetMenuActiveQuery();
+  const { data: suggestedData } = useGetMenuSuggestedQuery();
 
-  const menuActive = data?.payload.data;
+  const menuActive = activeData?.payload.data;
+  const menuSuggested = suggestedData?.payload.data;
+
   const menuItems = menuActive?.menuItems || [];
   const [orders, setOrders] = useState<OrderList>([]);
   const router = useRouter();
@@ -103,6 +110,20 @@ export default function MenuOrder() {
     }
   };
 
+  const handleCallWaiter = () => {
+    if (!socket || !infoGuest) return;
+    const idGuest = decodeToken(infoGuest.tokenGuestId).userId;
+
+    socket.emit("guest:call-waiter", {
+      tableNumber: infoGuest.tableNumber,
+      idGuest: idGuest.toString(),
+    });
+    // gửi xuống bàn nào đang sử dụng ứng dụng và khách nào gọi
+    toast.success("Đã gọi nhân viên phục vụ!", {
+      duration: 2000,
+    });
+  };
+
   return (
     <div>
       <h1 className="text-center text-xl font-bold">
@@ -110,6 +131,68 @@ export default function MenuOrder() {
         <Badge variant="default">{menuActive?.menuItems.length} món ăn</Badge>
       </h1>
       <div className="flex flex-col h-[calc(100vh-240px)] overflow-y-auto gap-6 py-2 mb-2">
+        <div key={1} className="space-y-3">
+          {/* Category Header */}
+          <div className="flex items-center gap-2 bg-background/95 backdrop-blur-sm z-10 pb-2 border-b">
+            <Image src={logoFavourite.src} width={40} height={40} alt="Favorites" />
+            <div>
+              <h3 className="text-base font-bold text-primary">Nên thử</h3>
+              <p className="text-xs text-muted-foreground">1 món</p>
+            </div>
+          </div>
+
+          {/* Category Items */}
+          <div className="space-y-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {menuSuggested?.map((menuItem) => {
+              const dish = menuItem.dish;
+              const isOutOfStock = menuItem.status === MenuItemStatus.OUT_OF_STOCK;
+
+              return (
+                <div key={menuItem.id} className="flex gap-4">
+                  <div className="shrink-0 relative">
+                    <Image
+                      src={dish.image}
+                      alt={dish.name}
+                      height={100}
+                      width={100}
+                      quality={100}
+                      unoptimized
+                      className="object-cover w-24 h-24 rounded-md"
+                    />
+                    {isOutOfStock && (
+                      <div>
+                        <div className="absolute inset-0 w-24 h-24 z-40 bg-gray-200 opacity-25 rounded-md"></div>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-md w-full">
+                          <span className="p-1 rounded-lg font-semibold text-sm bg-white text-black w-full block text-center">
+                            Hết hàng
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1 flex-1">
+                    <h3 className="text-[15px] font-semibold line-clamp-1">{dish.name}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{dish.description}</p>
+                    {menuItem.notes && <p className="text-xs text-orange-500 italic">💡 {menuItem.notes}</p>}
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-bold text-white bg-linear-to-r from-orange-500 to-amber-500 inline-block px-3 py-1 rounded-lg shadow-lg">
+                        {formatCurrency(menuItem.price)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="shrink-0 ml-auto flex justify-center items-center">
+                    <Quantity
+                      value={orders.find((order) => order.menuItemId === menuItem.id)?.quantity || 0}
+                      onChange={(quantity) => handleChangeQuantity(menuItem.id, quantity, menuItem.price)}
+                      status={menuItem.status}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {Object.entries(groupedByCategory).map(([categoryName, items]) => (
           <div key={categoryName} className="space-y-3">
             {/* Category Header */}
@@ -139,7 +222,7 @@ export default function MenuOrder() {
                       />
                       {isOutOfStock && (
                         <div>
-                          <div className="absolute inset-0 z-40 bg-gray-200 opacity-25 rounded-md"></div>
+                          <div className="absolute inset-0 w-24 h-24 z-40 bg-gray-200 opacity-25 rounded-md"></div>
                           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-md w-full">
                             <span className="p-1 rounded-lg font-semibold text-sm bg-white text-black w-full block text-center">
                               Hết hàng
@@ -196,7 +279,7 @@ export default function MenuOrder() {
           </Button>
           <Button
             className="w-48 block text-center bg-yellow-500 hover:bg-yellow-600 text-white"
-            onClick={() => toast.info("Chức năng đang phát triển")}
+            onClick={() => handleCallWaiter()}
           >
             <span>Gọi nhân viên</span>
           </Button>

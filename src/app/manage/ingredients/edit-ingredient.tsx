@@ -24,7 +24,6 @@ import { useUploadMutation } from "@/queries/useMedia";
 import { useGetIngredientDetailQuery, useUpdateIngredientMutation } from "@/queries/useIngredient";
 import { UpdateIngredientBody, UpdateIngredientBodyType } from "@/schemaValidations/ingredient.schema";
 import { toast } from "sonner";
-import revalidateApiRequests from "@/apiRequests/revalidate";
 import { Switch } from "@/components/ui/switch";
 
 export default function EditIngredient({
@@ -106,8 +105,6 @@ export default function EditIngredient({
         id: id as number,
         body: body,
       });
-
-      await revalidateApiRequests("ingredients");
 
       toast.success(message, {
         duration: 2000,

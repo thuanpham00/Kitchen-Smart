@@ -92,7 +92,6 @@ export default function OrdersCart() {
     }
 
     function onUpdateOrder(data: UpdateOrderResType["data"]) {
-      console.log(data);
       const {
         dishSnapshot: { name },
         quantity,

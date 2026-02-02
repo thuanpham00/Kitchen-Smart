@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
+import revalidateApiRequests from "@/apiRequests/revalidate";
 
 export default function FormEditMenu({ idMenu }: { idMenu: number }) {
   const menuDetail = useGetMenuDetailQuery({ id: Number(idMenu), enabled: Boolean(idMenu) });
@@ -60,6 +61,7 @@ export default function FormEditMenu({ idMenu }: { idMenu: number }) {
         ...values,
         version: payload.data.version,
       });
+      await revalidateApiRequests("menus");
     } catch (error: any) {
       if (
         error?.payload?.message ===
@@ -95,7 +97,7 @@ export default function FormEditMenu({ idMenu }: { idMenu: number }) {
       });
     }
   };
-  
+
   return (
     <div>
       <Form {...form}>

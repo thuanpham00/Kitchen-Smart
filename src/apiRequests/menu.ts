@@ -4,6 +4,7 @@ import {
   MenuActiveResType,
   MenuItemListResType,
   MenuItemResType,
+  MenuItemSuggestResType,
   MenuListResType,
   MenuQueryType,
   MenuResType,
@@ -43,20 +44,12 @@ export const menuApiRequests = {
 
   // menuItem
   listMenuItem: (idMenu: number) => {
-    return http.get<MenuItemListResType>(`/menus/${idMenu}/items`, {
-      next: {
-        tags: ["menus"],
-      },
-    });
+    return http.get<MenuItemListResType>(`/menus/${idMenu}/items`);
   },
 
   // menuItem
   menuItem: (idMenu: number) => {
-    return http.get<MenuItemResType>(`/menus/menu-item/${idMenu}`, {
-      next: {
-        tags: ["menus"],
-      },
-    });
+    return http.get<MenuItemResType>(`/menus/menu-item/${idMenu}`);
   },
 
   addMenuItem: (body: AddDishToMenuType) => {
@@ -69,5 +62,13 @@ export const menuApiRequests = {
 
   deleteMenuItem: (idMenuItem: number) => {
     return http.delete<MenuResType>(`/menus/menu-item/${idMenuItem}`);
+  },
+
+  getMenuSuggested: () => {
+    return http.get<MenuItemSuggestResType>(`/menus/suggested`, {
+      next: {
+        tags: ["menus"],
+      },
+    });
   },
 };

@@ -24,7 +24,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useUploadMutation } from "@/queries/useMedia";
 import { useAddIngredientMutation } from "@/queries/useIngredient";
-import revalidateApiRequests from "@/apiRequests/revalidate";
 import { Switch } from "@/components/ui/switch";
 
 export default function AddIngredient() {
@@ -86,8 +85,6 @@ export default function AddIngredient() {
       const {
         payload: { message },
       } = await addIngredientMutation.mutateAsync(body);
-
-      await revalidateApiRequests("ingredients");
 
       toast.success(message, {
         duration: 2000,

@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
+import revalidateApiRequests from "@/apiRequests/revalidate";
 import DishesMenuDialog, { DishItem } from "@/app/manage/menus/[id]/dishes-menu-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,7 @@ export default function EditDishToMenuForm({
         body,
       });
       toast.success(message, { duration: 2000 });
+      await revalidateApiRequests("menus");
       reset();
     } catch (error) {
       handleErrorApi({

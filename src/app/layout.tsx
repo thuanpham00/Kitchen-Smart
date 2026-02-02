@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import AppProvider from "@/components/app-provider";
+import ReactQueryInstance from "@/components/react-query";
 
 // fonts chữ
 const geistSans = Geist({
@@ -30,12 +31,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AppProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            {children}
-            <Toaster position="top-center" />
-          </ThemeProvider>
-        </AppProvider>
+        <ReactQueryInstance>
+          <AppProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              {children}
+              <Toaster position="top-center" />
+            </ThemeProvider>
+          </AppProvider>
+        </ReactQueryInstance>
       </body>
     </html>
   );

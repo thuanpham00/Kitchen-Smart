@@ -48,9 +48,10 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(93.187% 0.00539 16.173);
+  /* softened background/card to reduce glare */
+  --background: oklch(90% 0.00539 16.173);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: oklch(96% 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
@@ -121,5 +122,9 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  .dark .ant-select .ant-select-suffix svg {
+    color: white !important;
   }
 }

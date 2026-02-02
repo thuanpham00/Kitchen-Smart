@@ -11,11 +11,7 @@ import queryString from "query-string";
 
 export const dishCategoryApiRequests = {
   list: (params: DishCategoryQueryType) => {
-    return http.get<DishCategoryListResType>("/dish-categories?" + queryString.stringify(params), {
-      next: {
-        tags: ["dish-categories"],
-      },
-    });
+    return http.get<DishCategoryListResType>("/dish-categories?" + queryString.stringify(params));
   },
 
   addDishCategory: (body: CreateDishCategoryBodyType) => {

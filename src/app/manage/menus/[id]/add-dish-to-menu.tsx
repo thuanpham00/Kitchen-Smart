@@ -1,3 +1,4 @@
+import revalidateApiRequests from "@/apiRequests/revalidate";
 import DishesMenuDialog, { DishItem } from "@/app/manage/menus/[id]/dishes-menu-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ export default function AddDishToMenuForm({
         payload: { message },
       } = await addMenuItemMutation.mutateAsync(body);
       toast.success(message, { duration: 2000 });
+      await revalidateApiRequests("menus");
       reset();
       setOpen(false);
     } catch (error) {

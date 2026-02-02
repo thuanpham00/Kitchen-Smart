@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import jwt from "jsonwebtoken";
 import { authRequests } from "@/apiRequests/auth";
-import { DishStatus, OrderStatus, Role, TableStatus } from "@/constants/type";
+import { DishStatus, OrderStatus, Role, TableStatus, GuestCallStatus } from "@/constants/type";
 import { envConfig } from "@/utils/config";
 import { TokenPayload } from "@/types/jwt.types";
 import { format } from "date-fns";
@@ -63,9 +63,18 @@ export const setRefreshTokenFromLocalStorage = (value: string) => {
   return isClient && localStorage.setItem("refreshToken", value);
 };
 
+export const getTableNumberFromLocalStorage = () => {
+  return isClient ? localStorage.getItem("tableNumber") : null;
+};
+
+export const setTableNumberFromLocalStorage = (value: string) => {
+  return isClient && localStorage.setItem("tableNumber", value);
+};
+
 export const removeTokenFromLocalStorage = () => {
   isClient && localStorage.removeItem("accessToken");
   isClient && localStorage.removeItem("refreshToken");
+  isClient && localStorage.removeItem("tableNumber");
 };
 
 export const checkAndRefreshToken = async (params?: {
@@ -162,6 +171,21 @@ export const getVietnameseOrderStatus = (status: (typeof OrderStatus)[keyof type
   }
 };
 
+export const getVietnameseGuestCallStatus = (
+  status: (typeof GuestCallStatus)[keyof typeof GuestCallStatus],
+) => {
+  switch (status) {
+    case GuestCallStatus.Pending:
+      return "Chờ xử lý";
+    case GuestCallStatus.Completed:
+      return "Đã hoàn thành";
+    case GuestCallStatus.Rejected:
+      return "Từ chối";
+    default:
+      return "Không xác định";
+  }
+};
+
 export const getTableLink = ({ token, tableNumber }: { token: string; tableNumber: number }) => {
   return envConfig.NEXT_PUBLIC_URL + "/tables/" + tableNumber + "?token=" + token;
 };
@@ -204,4 +228,16 @@ export const generateSocket = (accessToken: string) => {
       Authorization: `Bearer ${accessToken}`,
     },
   });
+};
+
+export const wrapServerApi = async <T>(fn: () => Promise<T>) => {
+  let result = null;
+  try {
+    result = await fn();
+  } catch (error: any) {
+    if (error.digest?.includes("NEXT_REDIRECT")) {
+      throw error;
+    }
+  }
+  return result;
 };

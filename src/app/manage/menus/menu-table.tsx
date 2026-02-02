@@ -20,6 +20,8 @@ import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
 import { handleErrorApi } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAppStore } from "@/components/app-provider";
+import revalidateApiRequests from "@/apiRequests/revalidate";
 
 export type MenuItem = MenuListResType["data"][0];
 
@@ -122,6 +124,7 @@ const MenuTableContext = createContext<{
 export default function MenuTable() {
   const router = useRouter();
   const queryParams = useQueryParams();
+  const socket = useAppStore((state) => state.socket);
 
   const [searchName, setSearchName] = useState<string>(queryParams.name || "");
   const searchValue = useDebounceInput({ value: searchName, delay: 1000 });
@@ -182,12 +185,25 @@ export default function MenuTable() {
     try {
       await updateStatusMenuMutation.mutateAsync({ id, body });
       toast.success("Cập nhật trạng thái menu thành công", { duration: 2000 });
+      await revalidateApiRequests("menus");
     } catch (error) {
       handleErrorApi({
         errors: error,
       });
     }
   };
+
+  useEffect(() => {
+    if (!socket) return;
+    function updateMenuListener() {
+      listMenu.refetch();
+      toast.success("Menu đã được cập nhật từ hệ thống", { duration: 2000 });
+    }
+    socket.on("update-menu", updateMenuListener);
+    return () => {
+      socket.off("update-menu", updateMenuListener);
+    };
+  }, [socket, listMenu]);
 
   return (
     <MenuTableContext.Provider value={{ updateStatusMenu }}>

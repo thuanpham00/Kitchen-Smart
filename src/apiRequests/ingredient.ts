@@ -10,7 +10,7 @@ import queryString from "query-string";
 
 export const ingredientApiRequests = {
   list: (params: IngredientQueryType) => {
-    return http.get<IngredientListResType>("/ingredients?" + queryString.stringify(params), {});
+    return http.get<IngredientListResType>("/ingredients?" + queryString.stringify(params));
   },
   addIngredient: (body: CreateIngredientBodyType) => {
     return http.post<IngredientResType>("/ingredients", body);

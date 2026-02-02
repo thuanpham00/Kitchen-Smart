@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 export default function NavLinks() {
   const pathname = usePathname();
   const isRole = useAppStore((state) => state.isRole);
+  const countGuestCalls = useAppStore((state) => state.countGuestCalls);
 
   return (
     <TooltipProvider>
@@ -34,19 +35,25 @@ export default function NavLinks() {
           {menuItems.map((Item, index) => {
             if (!Item.roles.includes(isRole as "Owner" | "Employee")) return null;
             const isActive = pathname.includes(Item.href);
+            const isCallGuest = Item.href === "/manage/call-waiters";
             return (
               <Tooltip key={index}>
                 <TooltipTrigger asChild>
                   <Link
                     href={Item.href}
                     className={cn(
-                      "flex h-9 w-9 items-center justify-start gap-2 p-2 pl-4 rounded-lg transition-colors hover:text-foreground md:h-8 md:w-full",
+                      "flex h-9 w-9 items-center justify-start gap-2 p-2 pl-4 rounded-lg transition-colors hover:text-foreground md:h-8 md:w-full relative",
                       {
                         "bg-accent text-accent-foreground": isActive,
                         "text-muted-foreground": !isActive,
                       },
                     )}
                   >
+                    {isCallGuest && (
+                      <span className="absolute top-0 left-7.5 w-4 h-4 bg-red-500 rounded-full text-white text-xs text-center block">
+                        {countGuestCalls}
+                      </span>
+                    )}
                     <Item.Icon className="h-5 w-5" />
                     <div>{Item.title}</div>
                     <span className="sr-only">{Item.title}</span>

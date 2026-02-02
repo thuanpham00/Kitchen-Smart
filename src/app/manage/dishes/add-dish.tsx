@@ -25,7 +25,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useUploadMutation } from "@/queries/useMedia";
 import { useAddDishMutation } from "@/queries/useDish";
-import revalidateApiRequests from "@/apiRequests/revalidate";
 import { useGetListDishCategoryNameQuery } from "@/queries/useDishCategory";
 
 export default function AddDish() {
@@ -95,8 +94,6 @@ export default function AddDish() {
       const {
         payload: { message },
       } = await addDishMutation.mutateAsync(body);
-
-      await revalidateApiRequests("dishes");
 
       toast.success(message, {
         duration: 2000,

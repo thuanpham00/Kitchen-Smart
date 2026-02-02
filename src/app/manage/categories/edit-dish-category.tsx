@@ -17,7 +17,6 @@ import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { handleErrorApi } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import revalidateApiRequests from "@/apiRequests/revalidate";
 import { useGetDishCategoryDetailQuery, useUpdateDishCategoryMutation } from "@/queries/useDishCategory";
 import { UpdateDishCategoryBody, UpdateDishCategoryBodyType } from "@/schemaValidations/dishCategory.schema";
 
@@ -59,8 +58,6 @@ export default function EditDishCategory({
         id: id as number,
         body: values,
       });
-
-      await revalidateApiRequests("dish-categories");
 
       toast.success(message, {
         duration: 2000,

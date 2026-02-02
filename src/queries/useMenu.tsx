@@ -40,6 +40,18 @@ export const useGetMenuActiveQuery = () => {
   });
 };
 
+export const useGetMenuSuggestedQuery = () => {
+  return useQuery({
+    queryKey: ["menu-suggested"],
+    queryFn: () => {
+      return menuApiRequests.getMenuSuggested();
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    placeholderData: keepPreviousData,
+  });
+};
+
+
 export const useAddMenuMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({

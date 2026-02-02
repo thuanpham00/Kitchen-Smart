@@ -4,7 +4,7 @@
 "use client";
 import FormEditMenu from "@/app/manage/menus/[id]/form-edit-menu";
 import { useParams } from "next/navigation";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ColumnDef,
@@ -42,6 +42,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { useGetListDishCategoryNameQuery } from "@/queries/useDishCategory";
+import { useAppStore } from "@/components/app-provider";
+import revalidateApiRequests from "@/apiRequests/revalidate";
 
 // sử dụng trong phạm vị component AccountTable và các component con của nó
 const MenuTableContext = createContext<{
@@ -213,6 +215,7 @@ function AlertDialogDeleteMenuItem({
       toast.success(message, {
         duration: 2000,
       });
+      await revalidateApiRequests("menus");
       setMenuItemDelete(null);
     }
   };
@@ -249,6 +252,7 @@ function AlertDialogDeleteMenuItem({
 const PAGE_SIZE = 10;
 const pageIndex = 0;
 export default function MenuDetail() {
+  const socket = useAppStore((state) => state.socket);
   const params = useParams();
   const id = params.id as string;
   const listMenuItemQuery = useGetListItemMenuFromMenu(Number(id));
@@ -291,6 +295,18 @@ export default function MenuDetail() {
   const [openStatusFilter, setOpenStatusFilter] = useState(false);
   const listNameDishCategory = useGetListDishCategoryNameQuery();
   const dishCategories = listNameDishCategory.data?.payload.data || [];
+
+  useEffect(() => {
+    if (!socket) return;
+    function updateMenuItemListener() {
+      listMenuItemQuery.refetch();
+      toast.success("Menu món ăn đã được cập nhật từ hệ thống", { duration: 2000 });
+    }
+    socket.on("update-menu-item", updateMenuItemListener);
+    return () => {
+      socket.off("update-menu-item", updateMenuItemListener);
+    };
+  }, [socket, listMenuItemQuery]);
 
   return (
     <MenuTableContext.Provider

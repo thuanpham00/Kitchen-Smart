@@ -25,6 +25,12 @@ const menuItems = [
     roles: [Role.Owner, Role.Employee],
   },
   {
+    title: "Gọi phục vụ",
+    Icon: Headset,
+    href: "/manage/call-waiters",
+    roles: [Role.Owner, Role.Employee],
+  },
+  {
     title: "Bàn ăn",
     Icon: Table,
     href: "/manage/tables",
@@ -54,12 +60,7 @@ const menuItems = [
     href: "/manage/ingredients",
     roles: [Role.Owner, Role.Employee],
   },
-  {
-    title: "Gọi phục vụ",
-    Icon: Headset,
-    href: "/manage/accounts",
-    roles: [Role.Owner, Role.Employee],
-  },
+
   {
     title: "Nhân viên",
     Icon: Users2,

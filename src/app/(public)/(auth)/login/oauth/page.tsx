@@ -1,14 +1,14 @@
 "use client";
 import { useAppStore } from "@/components/app-provider";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import jwt from "jsonwebtoken";
 import { RoleType } from "@/types/jwt.types";
 import { generateSocket } from "@/lib/utils";
 import { toast } from "sonner";
 import { useLoginOauthMutation } from "@/queries/useAuth";
 
-export default function OauthPage() {
+function OauthForm() {
   const router = useRouter();
 
   const searchParams = useSearchParams();
@@ -42,4 +42,13 @@ export default function OauthPage() {
   }, [accessToken, refreshToken, message, setIsRole, setSocket, router, mutateAsync]);
 
   return null;
+}
+
+// để fix lỗi useSearchParams từ nextjs thì dùng suspense bao ngoài
+export default function OauthPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OauthForm />
+    </Suspense>
+  );
 }

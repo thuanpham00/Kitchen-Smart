@@ -18,7 +18,6 @@ import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { handleErrorApi } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import revalidateApiRequests from "@/apiRequests/revalidate";
 import { CreateDishCategoryBody, CreateDishCategoryBodyType } from "@/schemaValidations/dishCategory.schema";
 import { useAddDishCategoryMutation } from "@/queries/useDishCategory";
 
@@ -44,8 +43,6 @@ export default function AddDishCategory() {
       const {
         payload: { message },
       } = await addDishCategoryMutation.mutateAsync(values);
-
-      await revalidateApiRequests("dish-categories");
 
       toast.success(message, {
         duration: 2000,
@@ -121,7 +118,11 @@ export default function AddDishCategory() {
           <Button type="reset" form="add-dish-category-form">
             Xóa
           </Button>
-          <Button type="submit" form="add-dish-category-form" className="bg-blue-500 hover:bg-blue-400 text-white">
+          <Button
+            type="submit"
+            form="add-dish-category-form"
+            className="bg-blue-500 hover:bg-blue-400 text-white"
+          >
             Thêm
           </Button>
         </DialogFooter>

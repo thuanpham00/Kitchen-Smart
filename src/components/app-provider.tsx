@@ -5,19 +5,25 @@ import {
   decodeToken,
   generateSocket,
   getAccessTokenFromLocalStorage,
+  getOrderTypeQRFromLocalStorage,
   getTableNumberFromLocalStorage,
+  getTableTypeQRFromLocalStorage,
   removeTokenFromLocalStorage,
 } from "@/lib/utils";
 import { RoleType } from "@/types/jwt.types";
 import { create } from "zustand";
 import { Socket } from "socket.io-client";
 import LogoutSocket from "@/components/logout-socketed";
-import { useCountPendingGuestCallQuery } from "@/queries/useGuestCall";
+import { useCountPendingGuestCallTodayQuery } from "@/queries/useGuestCall";
 import { endOfDay, startOfDay } from "date-fns";
+import { OrderMode, Role } from "@/constants/type";
+import { useCountOrderTodayQuery } from "@/queries/useOrder";
 
 type InfoGuestType = {
   tokenGuestId: string;
   tableNumber: string;
+  orderTypeQR: OrderMode;
+  tableTypeQR: OrderMode;
 };
 
 type AppStoreType = {
@@ -32,6 +38,9 @@ type AppStoreType = {
 
   countGuestCalls: number;
   setCountGuestCalls: (countGuestCalls: number) => void;
+
+  countOrderToday: number;
+  setCountOrderToday: (countOrderToday: number) => void;
 };
 
 // dùng zustand
@@ -52,6 +61,9 @@ export const useAppStore = create<AppStoreType>((set) => ({
 
   countGuestCalls: 0,
   setCountGuestCalls: (countGuestCalls: number) => set({ countGuestCalls }),
+
+  countOrderToday: 0,
+  setCountOrderToday: (countOrderToday: number) => set({ countOrderToday }),
 }));
 
 // setup React Query ở cấp cao nhất của ứng dụng
@@ -59,61 +71,91 @@ const initFromDate = startOfDay(new Date());
 const initToDate = endOfDay(new Date());
 export default function AppProvider({ children }: { children: React.ReactNode }) {
   const isRole = useAppStore((state) => state.isRole);
+  const socket = useAppStore((state) => state.socket);
   const setIsRole = useAppStore((state) => state.setIsRole);
   const setSocket = useAppStore((state) => state.setSocket);
   const setInfoGuest = useAppStore((state) => state.setInfoGuest);
   const setCountGuestCalls = useAppStore((state) => state.setCountGuestCalls);
+  const setCountOrderToday = useAppStore((state) => state.setCountOrderToday);
 
-  const socket = useAppStore((state) => state.socket);
-
-  const countPending = useCountPendingGuestCallQuery(
+  // lấy số cuộc gọi phục vụ từ khách hôm nay (pending)
+  const countPending = useCountPendingGuestCallTodayQuery(
     {
       fromDate: initFromDate,
       toDate: initToDate,
     },
     {
-      enabled: Boolean(isRole) && Boolean(socket), // có nghĩa là chỉ chạy khi đã login
+      enabled: isRole !== Role.Guest && Boolean(isRole) && Boolean(socket), // có nghĩa là chỉ chạy khi đã login
     },
   );
+
+  // lấy số order hôm nay
+  const countOrder = useCountOrderTodayQuery(
+    {
+      fromDate: initFromDate,
+      toDate: initToDate,
+    },
+    {
+      enabled: isRole !== Role.Guest && Boolean(isRole) && Boolean(socket), // có nghĩa là chỉ chạy khi đã login
+    },
+  ); // fetch order list ngày hôm nay (mặc định)
 
   useEffect(() => {
     const accessToken = getAccessTokenFromLocalStorage();
     const tableNumber = getTableNumberFromLocalStorage();
+    const orderTypeQR = getOrderTypeQRFromLocalStorage();
+    const tableTypeQR = getTableTypeQRFromLocalStorage();
     if (accessToken) {
       const { role } = decodeToken(accessToken);
       setIsRole(role);
       setSocket(generateSocket(accessToken)); // khởi tạo socket khi login thành công
 
-      if (tableNumber) {
+      if (tableNumber && orderTypeQR) {
         // nếu có tableNumber thì mới set
         setInfoGuest({
           tableNumber: tableNumber,
           tokenGuestId: accessToken,
+          orderTypeQR: orderTypeQR as OrderMode, // type order có thể đổi
+          tableTypeQR: tableTypeQR as OrderMode, // nhưng table type thì không đổi
         });
       }
     }
-  }, [setIsRole, setSocket, setInfoGuest, setCountGuestCalls]);
+  }, [setIsRole, setSocket, setInfoGuest]);
 
   useEffect(() => {
     if (countPending.data?.payload.data !== undefined) {
       setCountGuestCalls(countPending.data.payload.data);
     }
-  }, [countPending?.data?.payload.data, setCountGuestCalls]);
+    if (countOrder.data?.payload.data !== undefined) {
+      setCountOrderToday(countOrder.data.payload.data);
+    }
+  }, [
+    countPending?.data?.payload.data,
+    setCountGuestCalls,
+    countOrder?.data?.payload.data,
+    setCountOrderToday,
+  ]);
 
   useEffect(() => {
     if (!socket) return;
 
     function onGuestCallListener() {
-      // setCountGuestCalls(data.countPending);
       countPending.refetch();
+    }
+
+    function onCountOrder() {
+      countOrder.refetch();
     }
 
     // đếm số cuộc gọi phục vụ từ khách (global toàn app)
     socket.on("count-call-waiter", onGuestCallListener);
+    socket.on("count-order", onCountOrder);
+
     return () => {
       socket.off("count-call-waiter", onGuestCallListener);
+      socket.off("count-order", onCountOrder);
     };
-  }, [socket, setCountGuestCalls, countPending]);
+  }, [socket, setCountGuestCalls, countPending, countOrder]);
 
   return (
     <Fragment>

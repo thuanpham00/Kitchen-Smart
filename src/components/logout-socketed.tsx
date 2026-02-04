@@ -11,6 +11,7 @@ export default function LogoutSocket() {
   const socket = useAppStore((state) => state.socket);
   const setSocket = useAppStore((state) => state.setSocket);
   const setIsRole = useAppStore((state) => state.setIsRole);
+  const setInfoGuest = useAppStore((state) => state.setInfoGuest);
 
   const logoutMutation = useLogoutMutation();
   const pathname = usePathname();
@@ -27,6 +28,8 @@ export default function LogoutSocket() {
         setIsRole(undefined);
         setSocket(undefined);
         socket?.disconnect();
+
+        setInfoGuest(undefined);
       } catch (error) {
         handleErrorApi({
           errors: error,
@@ -39,7 +42,7 @@ export default function LogoutSocket() {
     return () => {
       socket?.off("logout", onLogout);
     };
-  }, [pathname, router, socket, logoutMutation, setIsRole, setSocket]);
+  }, [pathname, router, socket, logoutMutation, setIsRole, setSocket, setInfoGuest]);
 
   return null;
 }

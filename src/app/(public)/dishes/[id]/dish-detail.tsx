@@ -42,7 +42,7 @@ const getDishStatusBadge = (status: string) => {
 };
 
 export default function DishDetail({ dish }: { dish: MenuItemResType["data"] }) {
-  const { dish: dishData, price, status, notes } = dish;
+  const { dish: dishData, price, status } = dish;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
@@ -108,12 +108,13 @@ export default function DishDetail({ dish }: { dish: MenuItemResType["data"] }) 
               </div>
             </div>
 
-            {notes && (
-              <div className="p-4 rounded-lg bg-muted/50">
-                <h3 className="font-semibold mb-1">Ghi chú</h3>
-                <p className="text-sm text-muted-foreground">{notes}</p>
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+              <TrendingUp className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <div className="text-sm text-muted-foreground">Nguyên liệu chính</div>
+                <div className="font-semibold">{dishData.ingredients?.join(", ")}</div>
               </div>
-            )}
+            </div>
           </div>
         </div>
         <div className="text-sm text-muted-foreground space-y-1 pt-4 border-t">

@@ -4,6 +4,7 @@
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createContext, useContext, useEffect, useState } from "react";
 import {
@@ -28,6 +29,7 @@ import { toast } from "sonner";
 import useQueryParams from "@/hooks/useQueryParams";
 import useDebounceInput from "@/hooks/useDebounceInput";
 import { isUndefined, omitBy } from "lodash";
+import { OrderModeType } from "@/constants/type";
 
 type TableItem = TableListResType["data"][0];
 
@@ -68,9 +70,35 @@ export const columns: ColumnDef<TableItem>[] = [
     header: "QR Code",
     cell: ({ row }) => (
       <div>
-        <QrCodeTable token={row.getValue("token")} tableNumber={row.getValue("number")} />
+        <QrCodeTable
+          token={row.getValue("token")}
+          tableNumber={row.getValue("number")}
+          type={row.original.typeQR}
+        />
       </div>
     ),
+  },
+  {
+    accessorKey: "typeQR",
+    header: "Loại mã QR",
+    cell: ({ row }) => (
+      <div>
+        {row.original.typeQR === OrderModeType.DINE_IN ? (
+          <Badge variant="default" className="bg-blue-100 text-blue-800">
+            QR dành cho tại bàn
+          </Badge>
+        ) : (
+          <Badge variant="default" className="bg-orange-100 text-orange-800">
+            QR dành cho mang về
+          </Badge>
+        )}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "notes",
+    header: "Ghi chú",
+    cell: ({ row }) => <div>{row.getValue("notes")}</div>,
   },
   {
     id: "actions",

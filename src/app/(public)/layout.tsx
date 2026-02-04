@@ -80,7 +80,6 @@ export default function Layout({
         {children}
         {modal}
       </main>
-
       <Footer />
     </div>
   );

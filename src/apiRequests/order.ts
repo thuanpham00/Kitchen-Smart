@@ -1,3 +1,4 @@
+import { GuestCallCountResType } from "@/schemaValidations/guest-call.schema";
 import {
   CreateOrdersBodyType,
   CreateOrdersResType,
@@ -23,7 +24,7 @@ export const orderApiRequest = {
         queryString.stringify({
           fromDate: queryParams.fromDate?.toISOString(),
           toDate: queryParams.toDate?.toISOString(),
-        })
+        }),
     ),
 
   updateOrder: (orderId: number, body: UpdateOrderBodyType) => {
@@ -37,4 +38,13 @@ export const orderApiRequest = {
   pay: (body: PayGuestOrdersBodyType) => {
     return http.post<PayGuestOrdersResType>(`/orders/pay`, body);
   },
+
+  getCountOrderToday: (queryParams: GetOrdersQueryParamsType) =>
+    http.get<GuestCallCountResType>(
+      "/orders/count-order-today?" +
+        queryString.stringify({
+          fromDate: queryParams.fromDate?.toISOString(),
+          toDate: queryParams.toDate?.toISOString(),
+        }),
+    ),
 };

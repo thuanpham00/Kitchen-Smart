@@ -82,3 +82,12 @@ export const GuestCallValues = [
 ] as const;
 
 export type GuestCallStatusType = keyof typeof GuestCallStatus;
+
+export const OrderModeType = {
+  DINE_IN: "DINE_IN", // ăn tại quán
+  TAKE_OUT: "TAKE_OUT", // mang đi
+} as const;
+
+export const OrderModeTypeValues = ["DINE_IN", "TAKE_OUT"] as const;
+
+export type OrderMode = keyof typeof OrderModeType;

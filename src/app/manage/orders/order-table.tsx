@@ -22,10 +22,10 @@ import {
 } from "@/schemaValidations/order.schema";
 import AddOrder from "@/app/manage/orders/add-order";
 import EditOrder from "@/app/manage/orders/edit-order";
-import { createContext, useEffect, useMemo, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getVietnameseOrderStatus, handleErrorApi } from "@/lib/utils";
-import { OrderStatusValues } from "@/constants/type";
+import { OrderMode, OrderModeType, OrderStatusValues, Role } from "@/constants/type";
 import OrderStatics from "@/app/manage/orders/order-statics";
 import { useOrderService } from "@/app/manage/orders/order.service";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -49,6 +49,7 @@ import TableSkeleton from "@/app/manage/orders/table-skeleton";
 import { toast } from "sonner";
 import { GuestCreateOrdersResType } from "@/schemaValidations/guest.schema";
 import { useAppStore } from "@/components/app-provider";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const OrderTableContext = createContext({
   orderIdEdit: undefined as number | undefined,
@@ -67,7 +68,7 @@ const orderTableColumns: ColumnDef<OrderItem>[] = [
   {
     accessorKey: "tableNumber",
     header: "Bàn",
-    cell: ({ row }) => <div>{row.getValue("tableNumber")}</div>,
+    cell: ({ row }) => <div>{row.original.tableNumber === 100 ? null : row.original.tableNumber}</div>,
     filterFn: (row, columnId, filterValue: string) => {
       if (filterValue === undefined) return true;
       return simpleMatchText(String(row.getValue(columnId)), String(filterValue));
@@ -106,6 +107,19 @@ const orderTableColumns: ColumnDef<OrderItem>[] = [
       if (filterValue === undefined) return true;
       return simpleMatchText(row.original.guest?.name ?? "Đã bị xóa", String(filterValue));
     },
+  },
+  {
+    id: "orderMode",
+    header: "Hình thức",
+    cell: ({ row }) => (
+      <div>
+        {row.original.orderMode === OrderModeType.DINE_IN ? (
+          <div className="p-2 rounded-md bg-green-600 inline-block">Ăn tại quán</div>
+        ) : (
+          <div className="p-2 rounded-md bg-blue-600 inline-block">Mang đi</div>
+        )}
+      </div>
+    ),
   },
   {
     id: "dishName",
@@ -190,6 +204,7 @@ const orderTableColumns: ColumnDef<OrderItem>[] = [
       );
     },
   },
+
   {
     id: "orderHandlerName",
     header: "Người xử lý",
@@ -242,6 +257,7 @@ const initFromDate = startOfDay(new Date());
 const initToDate = endOfDay(new Date());
 export default function OrderTable() {
   const socket = useAppStore((state) => state.socket);
+  const isRole = useAppStore((state) => state.isRole);
 
   const searchParam = useSearchParams();
   const [openStatusFilter, setOpenStatusFilter] = useState(false);
@@ -277,10 +293,12 @@ export default function OrderTable() {
     pageIndex, // Gía trị mặc định ban đầu, không có ý nghĩa khi data được fetch bất đồng bộ
     pageSize: PAGE_SIZE, //default page size
   });
+  const [selectedTab, setSelectedTab] = useState<OrderMode>(OrderModeType.DINE_IN);
 
   const { statics, orderObjectByGuestId, servingGuestByTableNumber } = useOrderService(orderList);
 
   const updateOrderMutation = useUpdateOrderMutation();
+
   const changeStatus = async (body: {
     orderId: number;
     menuItemId: number;
@@ -303,8 +321,16 @@ export default function OrderTable() {
     }
   };
 
+  const orderListFilteredByTab = orderList.filter((order) => order.orderMode === selectedTab);
+  const countOrderDineInByTab = orderList.filter(
+    (order) => order.orderMode === OrderModeType.DINE_IN && order.status !== OrderStatus.Paid,
+  ).length;
+  const countOrderTakeOutByTab = orderList.filter(
+    (order) => order.orderMode === OrderModeType.TAKE_OUT && order.status !== OrderStatus.Paid,
+  ).length;
+
   const table = useReactTable({
-    data: orderList,
+    data: orderListFilteredByTab,
     columns: orderTableColumns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -514,6 +540,22 @@ export default function OrderTable() {
           tableList={tableListSortedByNumber}
           servingGuestByTableNumber={servingGuestByTableNumber}
         />
+        <Tabs value={selectedTab} onValueChange={(val) => setSelectedTab(val as OrderMode)} className="mb-4">
+          <TabsList variant="default">
+            <TabsTrigger value={OrderModeType.DINE_IN}>
+              <span>Ăn tại quán</span>
+              <span className="bg-red-500 w-4 h-4 text-center inline-block rounded-full text-xs">
+                {countOrderDineInByTab}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value={OrderModeType.TAKE_OUT}>
+              <span>Mang đi</span>
+              <span className="bg-red-500 w-4 h-4 text-center inline-block rounded-full text-xs">
+                {countOrderTakeOutByTab}
+              </span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         {isPending && <TableSkeleton />}
         <div className="rounded-md border">
           <Table>

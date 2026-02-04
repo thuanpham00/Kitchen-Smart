@@ -1,13 +1,13 @@
 "use client";
 import Quantity from "@/app/guest/menu/quantity";
 import { Button } from "@/components/ui/button";
-import { MenuItemStatus } from "@/constants/type";
-import { decodeToken, formatCurrency, handleErrorApi } from "@/lib/utils";
+import { MenuItemStatus, OrderMode, OrderModeType } from "@/constants/type";
+import { cn, decodeToken, formatCurrency, handleErrorApi, setOrderTypeQRFromLocalStorage } from "@/lib/utils";
 import { useGuestOrderMutation } from "@/queries/useGuest";
 import { GuestCreateOrdersBodyType } from "@/schemaValidations/guest.schema";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -23,14 +23,17 @@ import { useGetMenuActiveQuery, useGetMenuSuggestedQuery } from "@/queries/useMe
 import { Badge } from "@/components/ui/badge";
 import logoFavourite from "../../../../public/images/favorites.png";
 import { useAppStore } from "@/components/app-provider";
+import { Check, House, Truck } from "lucide-react";
 
-type OrderList = (GuestCreateOrdersBodyType[number] & {
+type OrderList = (GuestCreateOrdersBodyType["listOrder"][number] & {
   price: number;
 })[];
 
 export default function MenuOrder() {
   const socket = useAppStore((state) => state.socket);
   const infoGuest = useAppStore((state) => state.infoGuest);
+  const setInfoGuest = useAppStore((state) => state.setInfoGuest);
+
   const orderMutation = useGuestOrderMutation();
   const { data: activeData } = useGetMenuActiveQuery();
   const { data: suggestedData } = useGetMenuSuggestedQuery();
@@ -42,6 +45,17 @@ export default function MenuOrder() {
   const [orders, setOrders] = useState<OrderList>([]);
   const router = useRouter();
   const [open, setOpen] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("Nên thử");
+
+  const [orderMode, setOrderMode] = useState<OrderMode>(OrderModeType.DINE_IN);
+  const [pendingOrderMode, setPendingOrderMode] = useState<OrderMode | null>(null);
+
+  useEffect(() => {
+    if (infoGuest?.orderTypeQR) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOrderMode(infoGuest.orderTypeQR as OrderMode);
+    }
+  }, [infoGuest?.orderTypeQR]);
 
   // Group menu items by category
   const groupedByCategory = menuItems
@@ -57,6 +71,12 @@ export default function MenuOrder() {
       },
       {} as Record<string, typeof menuItems>,
     );
+
+  const groupedByCategoryAndTry: Record<string, typeof menuItems> = {
+    ...groupedByCategory,
+    ...{ "Nên thử": menuSuggested || [] },
+  };
+  const listDishInSelectedCategory = groupedByCategoryAndTry[selectedCategory] || [];
 
   const handleChangeQuantity = (menuItemId: number, quantity: number, price: number) => {
     if (quantity === 0) {
@@ -94,7 +114,10 @@ export default function MenuOrder() {
     }
     if (orderMutation.isPending) return;
     try {
-      const body = orders.map((order) => ({ menuItemId: order.menuItemId, quantity: order.quantity }));
+      const body = {
+        listOrder: orders.map((order) => ({ menuItemId: order.menuItemId, quantity: order.quantity })),
+        typeOrder: orderMode,
+      };
       const {
         payload: { message },
       } = await orderMutation.mutateAsync(body);
@@ -110,9 +133,26 @@ export default function MenuOrder() {
     }
   };
 
+  const TIME_LIMIT = 5 * 60 * 1000; // 5 phút
+  const MAX_CALLS = 3;
+  const [callTimestamps, setCallTimestamps] = useState<number[]>([]);
+
   const handleCallWaiter = () => {
     if (!socket || !infoGuest) return;
+    // trong 5p chỉ gọi được tối đa 3 lần
+
+    const now = Date.now();
+    // Lọc bỏ các lần gọi cũ hơn 5 phút
+    const recentCalls = callTimestamps.filter((timestamp) => now - timestamp < TIME_LIMIT);
+
+    if (recentCalls.length >= MAX_CALLS) {
+      toast.error("Bạn đã gọi nhân viên 3 lần trong 5 phút. Vui lòng chờ nhân viên đến phục vụ.");
+      return;
+    }
+
     const idGuest = decodeToken(infoGuest.tokenGuestId).userId;
+
+    setCallTimestamps([...recentCalls, now]);
 
     socket.emit("guest:call-waiter", {
       tableNumber: infoGuest.tableNumber,
@@ -124,181 +164,216 @@ export default function MenuOrder() {
     });
   };
 
+  const handleChangeOrderMode = (newMode: OrderMode) => {
+    if (newMode === orderMode) return; // Nếu click vào mode hiện tại thì bỏ qua
+    setPendingOrderMode(newMode);
+  };
+
+  const confirmChangeMode = () => {
+    if (pendingOrderMode !== null) {
+      setOrderMode(pendingOrderMode);
+      if (infoGuest) {
+        // Cập nhật Zustand store
+        setInfoGuest({
+          ...infoGuest,
+          orderTypeQR: pendingOrderMode as OrderMode,
+        });
+        // Cập nhật localStorage
+        setOrderTypeQRFromLocalStorage(pendingOrderMode);
+      }
+    }
+    setPendingOrderMode(null);
+  };
+
+  const listSortCategory = Object.keys(groupedByCategoryAndTry).sort((a, b) => {
+    if (a === "Nên thử") return -1;
+    if (b === "Nên thử") return 1;
+    return a.localeCompare(b);
+  });
+
   return (
     <div>
-      <h1 className="text-center text-xl font-bold">
-        {menuActive?.name ? menuActive.name : "Menu quán"} -{" "}
-        <Badge variant="default">{menuActive?.menuItems.length} món ăn</Badge>
-      </h1>
-      <div className="flex flex-col h-[calc(100vh-240px)] overflow-y-auto gap-6 py-2 mb-2">
-        <div key={1} className="space-y-3">
-          {/* Category Header */}
-          <div className="flex items-center gap-2 bg-background/95 backdrop-blur-sm z-10 pb-2 border-b">
-            <Image src={logoFavourite.src} width={40} height={40} alt="Favorites" />
-            <div>
-              <h3 className="text-base font-bold text-primary">Nên thử</h3>
-              <p className="text-xs text-muted-foreground">1 món</p>
-            </div>
-          </div>
+      <div className="relative mb-4">
+        <h1 className="text-center text-xl font-bold">
+          {menuActive?.name ? menuActive.name : "Menu quán"} -{" "}
+          <Badge variant="default">{menuActive?.menuItems.length} món ăn</Badge>
+        </h1>
+        <div className="absolute top-0 right-0 flex items-center justify-end gap-2">
+          {(infoGuest?.orderTypeQR === OrderModeType.DINE_IN ||
+            infoGuest?.tableTypeQR === OrderModeType.DINE_IN) && (
+            <Fragment>
+              <Button
+                onClick={() => handleChangeOrderMode(OrderModeType.DINE_IN)}
+                className={cn(
+                  "border border-red-500! bg-background! dark:bg-background! flex items-center gap-2",
+                  {
+                    "bg-red-500! dark:bg-red-500! dark:text-white": orderMode === OrderModeType.DINE_IN,
+                  },
+                )}
+              >
+                <House
+                  className={cn("text-black dark:text-white", {
+                    "text-white dark:text-white": orderMode === OrderModeType.DINE_IN,
+                  })}
+                />
 
-          {/* Category Items */}
-          <div className="space-y-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {menuSuggested?.map((menuItem) => {
-              const dish = menuItem.dish;
-              const isOutOfStock = menuItem.status === MenuItemStatus.OUT_OF_STOCK;
+                <span
+                  className={cn("text-black dark:text-white", {
+                    "text-white dark:text-white": orderMode === OrderModeType.DINE_IN,
+                  })}
+                >
+                  Ăn tại chỗ
+                </span>
+                {orderMode === OrderModeType.DINE_IN && <Check className="text-white dark:text-foreground" />}
+              </Button>
 
-              return (
-                <div key={menuItem.id} className="flex gap-4">
-                  <div className="shrink-0 relative">
-                    <Image
-                      src={dish.image}
-                      alt={dish.name}
-                      height={100}
-                      width={100}
-                      quality={100}
-                      unoptimized
-                      className="object-cover w-24 h-24 rounded-md"
-                    />
-                    {isOutOfStock && (
-                      <div>
-                        <div className="absolute inset-0 w-24 h-24 z-40 bg-gray-200 opacity-25 rounded-md"></div>
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-md w-full">
-                          <span className="p-1 rounded-lg font-semibold text-sm bg-white text-black w-full block text-center">
-                            Hết hàng
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1 flex-1">
-                    <h3 className="text-[15px] font-semibold line-clamp-1">{dish.name}</h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{dish.description}</p>
-                    {menuItem.notes && <p className="text-xs text-orange-500 italic">💡 {menuItem.notes}</p>}
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm font-bold text-white bg-linear-to-r from-orange-500 to-amber-500 inline-block px-3 py-1 rounded-lg shadow-lg">
-                        {formatCurrency(menuItem.price)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="shrink-0 ml-auto flex justify-center items-center">
-                    <Quantity
-                      value={orders.find((order) => order.menuItemId === menuItem.id)?.quantity || 0}
-                      onChange={(quantity) => handleChangeQuantity(menuItem.id, quantity, menuItem.price)}
-                      status={menuItem.status}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+              <Button
+                onClick={() => handleChangeOrderMode(OrderModeType.TAKE_OUT)}
+                className={cn(
+                  "border border-red-500! bg-background! dark:bg-background! flex items-center gap-2",
+                  {
+                    "bg-red-500! dark:bg-red-500! dark:text-white": orderMode === OrderModeType.TAKE_OUT,
+                  },
+                )}
+              >
+                <Truck
+                  className={cn("text-black dark:text-white", {
+                    "text-white dark:text-white": orderMode === OrderModeType.TAKE_OUT,
+                  })}
+                />
+
+                <span
+                  className={cn("text-black dark:text-white", {
+                    "text-white dark:text-white": orderMode === OrderModeType.TAKE_OUT,
+                  })}
+                >
+                  Mang đi
+                </span>
+
+                {orderMode === OrderModeType.TAKE_OUT && (
+                  <Check className="text-white dark:text-foreground" />
+                )}
+              </Button>
+            </Fragment>
+          )}
+
+          {infoGuest?.orderTypeQR === OrderModeType.TAKE_OUT &&
+            infoGuest.tableTypeQR === OrderModeType.TAKE_OUT && (
+              <div className="p-2 rounded bg-red-500 text-white">
+                Bạn đang ở chế độ Mang về — không thể đổi
+              </div>
+            )}
         </div>
-
-        {Object.entries(groupedByCategory).map(([categoryName, items]) => (
-          <div key={categoryName} className="space-y-3">
-            {/* Category Header */}
-            <div className="bg-background/95 backdrop-blur-sm z-10 pb-2 border-b">
-              <h3 className="text-base font-bold text-primary">{categoryName}</h3>
-              <p className="text-xs text-muted-foreground">{items.length} món</p>
-            </div>
-
-            {/* Category Items */}
-            <div className="space-y-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {items.map((menuItem) => {
-                const dish = menuItem.dish;
-                const hasDiscount = menuItem.price < dish.price;
-                const isOutOfStock = menuItem.status === MenuItemStatus.OUT_OF_STOCK;
-
+      </div>
+      <div className="grid grid-cols-6 gap-2">
+        <div className="col-span-2 lg:col-span-1">
+          {listSortCategory.map((categoryName, index) => {
+            return (
+              <Button
+                key={categoryName}
+                onClick={() => setSelectedCategory(categoryName)}
+                className={cn(
+                  "w-full text-left! justify-start py-6 dark:bg-card! dark:text-foreground bg-card text-foreground border-b border-gray-300 dark:border-white/60 hover:bg-background rounded-none",
+                  {
+                    "rounded-t-lg!": index === 0,
+                    "rounded-b-lg! border-b-0": index === listSortCategory.length - 1,
+                    "dark:bg-red-600! bg-red-600! text-white dark:text-accent-foreground":
+                      selectedCategory === categoryName,
+                  },
+                )}
+              >
+                {categoryName === "Nên thử" && (
+                  <Image
+                    src={logoFavourite.src}
+                    alt="favorites"
+                    width={30}
+                    height={30}
+                    className="inline-block"
+                  />
+                )}
+                {categoryName}
+              </Button>
+            );
+          })}
+        </div>
+        <div className="col-span-4 lg:col-span-5">
+          <div className="flex flex-col h-[calc(100vh-210px)] overflow-y-auto gap-6 py-2 mb-2">
+            <div className="space-y-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {listDishInSelectedCategory.map((item) => {
+                const dish = item.dish;
+                const isOutOfStock = item.status === MenuItemStatus.OUT_OF_STOCK;
                 return (
-                  <div key={menuItem.id} className="flex gap-4">
-                    <div className="shrink-0 relative">
+                  <div key={dish.id} className="flex flex-col rounded-md">
+                    <div className="shrink-0 relative w-full h-62.5">
                       <Image
                         src={dish.image}
                         alt={dish.name}
-                        height={100}
-                        width={100}
-                        quality={100}
+                        fill
+                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
                         unoptimized
-                        className="object-cover w-24 h-24 rounded-md"
+                        className="object-cover rounded-tl-md rounded-tr-md"
                       />
                       {isOutOfStock && (
                         <div>
-                          <div className="absolute inset-0 w-24 h-24 z-40 bg-gray-200 opacity-25 rounded-md"></div>
-                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-md w-full">
-                            <span className="p-1 rounded-lg font-semibold text-sm bg-white text-black w-full block text-center">
+                          <div className="absolute inset-0 w-full h-62.5 z-1 bg-gray-200 opacity-25 rounded-md"></div>
+                          <div className="absolute top-1/2 left-1/2 z-1 -translate-x-1/2 -translate-y-1/2 rounded-md w-full">
+                            <span className="p-3 rounded-lg font-semibold text-sm bg-white text-black w-full block text-center">
                               Hết hàng
                             </span>
                           </div>
                         </div>
                       )}
-                      {hasDiscount && !isOutOfStock && (
-                        <div className="absolute top-1 left-1 z-10">
-                          <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded">
-                            Giảm giá
-                          </span>
-                        </div>
-                      )}
                     </div>
-                    <div className="space-y-1 flex-1">
+                    <div className="px-3 pt-2 pb-4 bg-border rounded-bl-md rounded-br-md">
                       <h3 className="text-[15px] font-semibold line-clamp-1">{dish.name}</h3>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{dish.description}</p>
-                      {menuItem.notes && (
-                        <p className="text-xs text-orange-500 italic">💡 {menuItem.notes}</p>
-                      )}
-                      <div className="flex items-center gap-2">
-                        {hasDiscount && (
-                          <span className="text-xs text-muted-foreground line-through">
-                            {formatCurrency(dish.price)}
-                          </span>
-                        )}
+                      <p className="text-xs text-muted-foreground line-clamp-2 h-10">{dish.description}</p>
+                      <div className="flex justify-between items-center">
                         <div className="text-sm font-bold text-white bg-linear-to-r from-orange-500 to-amber-500 inline-block px-3 py-1 rounded-lg shadow-lg">
-                          {formatCurrency(menuItem.price)}
+                          {formatCurrency(dish.price)}
                         </div>
+                        <Quantity
+                          value={orders.find((order) => order.menuItemId === item.id)?.quantity || 0}
+                          onChange={(quantity) => handleChangeQuantity(item.id, quantity, dish.price)}
+                          status={item.status}
+                        />
                       </div>
-                    </div>
-                    <div className="shrink-0 ml-auto flex justify-center items-center">
-                      <Quantity
-                        value={orders.find((order) => order.menuItemId === menuItem.id)?.quantity || 0}
-                        onChange={(quantity) => handleChangeQuantity(menuItem.id, quantity, menuItem.price)}
-                        status={menuItem.status}
-                      />
                     </div>
                   </div>
                 );
               })}
             </div>
           </div>
-        ))}
-      </div>
-      <div className="sticky bottom-0 border-t-2 pt-2 flex justify-between gap-2">
-        <div className="flex gap-2">
-          <Button
-            className="w-52 block text-center bg-green-500 hover:bg-green-600 text-white"
-            onClick={() => toast.info("Chức năng đang phát triển")}
-          >
-            <span>Chatbot tư vấn</span>
-          </Button>
-          <Button
-            className="w-48 block text-center bg-yellow-500 hover:bg-yellow-600 text-white"
-            onClick={() => handleCallWaiter()}
-          >
-            <span>Gọi nhân viên</span>
-          </Button>
+          <div className="sticky bottom-0 border-t-2 pt-2 flex flex-col lg:flex-row justify-between gap-2">
+            <div className="order-2 lg:order-1 flex gap-2">
+              <Button
+                className="flex-1 lg:w-52 block text-center bg-green-500 hover:bg-green-600 text-white"
+                onClick={() => toast.info("Chức năng đang phát triển")}
+              >
+                <span>Chatbot tư vấn</span>
+              </Button>
+              <Button
+                className="flex-1 lg:w-48 block text-center bg-yellow-500 hover:bg-yellow-600 text-white"
+                onClick={() => handleCallWaiter()}
+              >
+                <span>Gọi nhân viên</span>
+              </Button>
+            </div>
+            <Button
+              className="w-full lg:w-62 justify-between order-1 lg:order-2 dark:bg-white!"
+              onClick={() => {
+                if (orders.length === 0) {
+                  toast.error("Vui lòng chọn món ăn trước khi gọi món");
+                  return;
+                }
+                setOpen(true);
+              }}
+            >
+              <span>Gọi món · {orders.length} món</span>
+              <span>{formatCurrency(totalPriceOrder)} </span>
+            </Button>
+          </div>
         </div>
-        <Button
-          className="w-62 justify-between"
-          onClick={() => {
-            if (orders.length === 0) {
-              toast.error("Vui lòng chọn món ăn trước khi gọi món");
-              return;
-            }
-            setOpen(true);
-          }}
-        >
-          <span>Gọi món · {orders.length} món</span>
-          <span>{formatCurrency(totalPriceOrder)} </span>
-        </Button>
       </div>
-
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -329,6 +404,12 @@ export default function MenuOrder() {
                   })}
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="font-semibold">Loại order:</span>
+                  <span className="text-lg font-bold text-orange-600">
+                    {orderMode === OrderModeType.DINE_IN ? "Ăn tại quán" : "Mang về"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
                   <span className="font-semibold">Tổng cộng:</span>
                   <span className="text-lg font-bold text-orange-600">{formatCurrency(totalPriceOrder)}</span>
                 </div>
@@ -338,6 +419,33 @@ export default function MenuOrder() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setOpen(false)}>Hủy</AlertDialogCancel>
             <AlertDialogAction onClick={handleOrder}>Xác nhận đặt món</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingOrderMode !== null}
+        onOpenChange={(open) => !open && setPendingOrderMode(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận đổi hình thức order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc muốn đổi sang hình thức{" "}
+              <strong className="text-orange-600">
+                {pendingOrderMode === OrderModeType.DINE_IN ? "Ăn tại quán" : "Mang về"}
+              </strong>
+              ?
+              {orders.length > 0 && (
+                <span className="block mt-2 text-yellow-600">
+                  Lưu ý: Bạn đang có {orders.length} món trong giỏ hàng.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingOrderMode(null)}>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmChangeMode}>Xác nhận</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

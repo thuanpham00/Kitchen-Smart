@@ -6,7 +6,7 @@ export const useGetGuestCallListQuery = (params: GetOrdersQueryParamsType) => {
   return useQuery({
     queryKey: ["manage-guest-calls", params],
     queryFn: () => {
-      return guestCallApiRequest.getGuestCalls();
+      return guestCallApiRequest.getGuestCalls(params);
     },
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60, // 1 minute
@@ -21,14 +21,14 @@ export const useUpdateStatusGuestCallMutation = () => {
   });
 };
 
-export const useCountPendingGuestCallQuery = (
+export const useCountPendingGuestCallTodayQuery = (
   params: GetOrdersQueryParamsType,
   { enabled }: { enabled: boolean },
 ) => {
   return useQuery({
     queryKey: ["count-pending-guest-calls", params],
     queryFn: () => {
-      return guestCallApiRequest.getCountPendingGuestCall();
+      return guestCallApiRequest.getCountPendingGuestCall(params);
     },
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60, // 1 minute,

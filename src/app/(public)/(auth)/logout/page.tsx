@@ -11,6 +11,7 @@ function Logout() {
   const socket = useAppStore((state) => state.socket);
   const setSocket = useAppStore((state) => state.setSocket);
   const setIsRole = useAppStore((state) => state.setIsRole);
+  const setInfoGuest = useAppStore((state) => state.setInfoGuest);
 
   const { mutateAsync } = useLogoutMutation();
   const router = useRouter();
@@ -28,11 +29,22 @@ function Logout() {
         setIsRole(undefined);
         setSocket(undefined);
         socket?.disconnect();
+
+        setInfoGuest(undefined);
       });
     } else {
       router.push("/"); // nếu url ko đúng thì về trang chủ
     }
-  }, [accessTokenFromURL, mutateAsync, refreshTokenFromURL, router, setIsRole, setSocket, socket]);
+  }, [
+    accessTokenFromURL,
+    mutateAsync,
+    refreshTokenFromURL,
+    router,
+    socket,
+    setIsRole,
+    setSocket,
+    setInfoGuest,
+  ]);
   return <div>Logout page</div>;
 }
 

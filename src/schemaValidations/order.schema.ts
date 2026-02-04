@@ -1,4 +1,4 @@
-import { DishStatusValues, OrderStatusValues } from "@/constants/type";
+import { DishStatusValues, OrderModeTypeValues, OrderStatusValues } from "@/constants/type";
 import { AccountSchema } from "@/schemaValidations/account.schema";
 import { TableSchema } from "@/schemaValidations/table.schema";
 import z from "zod";
@@ -14,6 +14,7 @@ const DishSnapshotSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
 });
+
 export const OrderSchema = z.object({
   id: z.number(),
   guestId: z.number().nullable(),
@@ -32,6 +33,8 @@ export const OrderSchema = z.object({
   quantity: z.number(),
   orderHandlerId: z.number().nullable(),
   orderHandler: AccountSchema.nullable(),
+
+  orderMode: z.enum(OrderModeTypeValues),
   status: z.enum(OrderStatusValues),
   createdAt: z.date(),
   updatedAt: z.date(),

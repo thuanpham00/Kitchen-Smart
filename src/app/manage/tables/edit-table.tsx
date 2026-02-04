@@ -6,16 +6,22 @@ import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { getTableLink, getVietnameseTableStatus, handleErrorApi } from "@/lib/utils";
+import {
+  getTableLink,
+  getVietnameseOrderModeStatus,
+  getVietnameseTableStatus,
+  handleErrorApi,
+} from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UpdateTableBody, UpdateTableBodyType } from "@/schemaValidations/table.schema";
-import { TableStatus, TableStatusValues } from "@/constants/type";
+import { OrderModeType, OrderModeTypeValues, TableStatus, TableStatusValues } from "@/constants/type";
 import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
 import { useGetTableDetailQuery, useUpdateTableMutation } from "@/queries/useTable";
 import { useEffect } from "react";
 import QrCodeTable from "@/components/qrcode-table";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function EditTable({
   id,
@@ -35,6 +41,8 @@ export default function EditTable({
       capacity: 2,
       status: TableStatus.Hidden,
       changeToken: false,
+      notes: "",
+      typeQR: OrderModeType.DINE_IN,
     },
   });
 
@@ -44,6 +52,8 @@ export default function EditTable({
         capacity: dataTableDetail.capacity,
         status: dataTableDetail.status,
         changeToken: form.getValues("changeToken"),
+        notes: dataTableDetail.notes ?? "",
+        typeQR: dataTableDetail.typeQR,
       });
     }
   }, [dataTableDetail, form]);
@@ -175,6 +185,39 @@ export default function EditTable({
                 />
                 <FormField
                   control={form.control}
+                  name="typeQR"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="description">Loại mã QR</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Chọn loại mã QR" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {OrderModeTypeValues.map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {getVietnameseOrderModeStatus(status)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="changeToken"
                   render={({ field }) => (
                     <FormItem>
@@ -191,6 +234,21 @@ export default function EditTable({
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                        <Label htmlFor="notes">Ghi chú</Label>
+                        <div className="col-span-3 w-full space-y-2">
+                          <Textarea id="notes" className="w-full" {...field} />
+                          <FormMessage />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
                 <FormItem>
                   <div className="grid grid-cols-4 items-center justify-items-start gap-4">
                     <Label>URL gọi món</Label>
@@ -199,6 +257,7 @@ export default function EditTable({
                         href={getTableLink({
                           token: dataTableDetail?.token as string,
                           tableNumber: dataTableDetail?.number as number,
+                          type: dataTableDetail?.typeQR as string,
                         })}
                         target="_blank"
                         className="break-all"
@@ -206,6 +265,7 @@ export default function EditTable({
                         {getTableLink({
                           token: dataTableDetail?.token as string,
                           tableNumber: dataTableDetail?.number as number,
+                          type: dataTableDetail?.typeQR as string,
                         })}
                       </Link>
                     </div>
@@ -217,7 +277,11 @@ export default function EditTable({
                   <div className="grid grid-cols-4 items-start justify-items-start gap-4">
                     <Label>QR Code</Label>
                     {dataTableDetail && (
-                      <QrCodeTable token={dataTableDetail.token} tableNumber={dataTableDetail.number} />
+                      <QrCodeTable
+                        token={dataTableDetail.token}
+                        tableNumber={dataTableDetail.number}
+                        type={dataTableDetail.typeQR}
+                      />
                     )}
                     <div className="col-span-3 w-full space-y-2"></div>
                   </div>

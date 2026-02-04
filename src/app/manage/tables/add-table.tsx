@@ -15,12 +15,13 @@ import { PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { getVietnameseTableStatus, handleErrorApi } from "@/lib/utils";
+import { getVietnameseOrderModeStatus, getVietnameseTableStatus, handleErrorApi } from "@/lib/utils";
 import { CreateTableBody, CreateTableBodyType } from "@/schemaValidations/table.schema";
-import { TableStatus, TableStatusValues } from "@/constants/type";
+import { OrderModeType, OrderModeTypeValues, TableStatus, TableStatusValues } from "@/constants/type";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAddTableMutation } from "@/queries/useTable";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function AddTable() {
   const addTableMutation = useAddTableMutation();
@@ -32,6 +33,8 @@ export default function AddTable() {
       number: 0,
       capacity: 2,
       status: TableStatus.Hidden,
+      notes: "",
+      typeQR: OrderModeType.DINE_IN,
     },
   });
 
@@ -159,6 +162,50 @@ export default function AddTable() {
                       </div>
 
                       <FormMessage />
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="typeQR"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                      <Label htmlFor="description">Loại mã QR</Label>
+                      <div className="col-span-3 w-full space-y-2">
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn loại mã QR" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {OrderModeTypeValues.map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {getVietnameseOrderModeStatus(status)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <FormMessage />
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                      <Label htmlFor="notes">Ghi chú</Label>
+                      <div className="col-span-3 w-full space-y-2">
+                        <Textarea id="notes" className="w-full" {...field} />
+                        <FormMessage />
+                      </div>
                     </div>
                   </FormItem>
                 )}

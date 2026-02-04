@@ -11,6 +11,7 @@ export default function RefreshToken() {
   const socket = useAppStore((state) => state.socket);
   const setIsRole = useAppStore((state) => state.setIsRole);
   const setSocket = useAppStore((state) => state.setSocket);
+  const setInfoGuest = useAppStore((state) => state.setInfoGuest);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -27,6 +28,8 @@ export default function RefreshToken() {
           setIsRole(undefined);
           setSocket(undefined);
           socket?.disconnect();
+
+          setInfoGuest(undefined);
         },
         force,
       });
@@ -63,7 +66,7 @@ export default function RefreshToken() {
       socket?.off("disconnect", onDisconnect);
       socket?.off("refresh-token", onRefreshTokenSocket);
     };
-  }, [pathname, router, setIsRole, socket, setSocket]);
+  }, [pathname, router, setIsRole, socket, setSocket, setInfoGuest]);
 
   return null;
 }

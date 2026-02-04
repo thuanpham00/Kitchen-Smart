@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import jwt from "jsonwebtoken";
 import { authRequests } from "@/apiRequests/auth";
-import { DishStatus, OrderStatus, Role, TableStatus, GuestCallStatus } from "@/constants/type";
+import { DishStatus, OrderStatus, Role, TableStatus, GuestCallStatus, OrderModeType } from "@/constants/type";
 import { envConfig } from "@/utils/config";
 import { TokenPayload } from "@/types/jwt.types";
 import { format } from "date-fns";
@@ -71,10 +71,29 @@ export const setTableNumberFromLocalStorage = (value: string) => {
   return isClient && localStorage.setItem("tableNumber", value);
 };
 
+export const getOrderTypeQRFromLocalStorage = () => {
+  return isClient ? localStorage.getItem("orderTypeQR") : null;
+};
+
+export const setOrderTypeQRFromLocalStorage = (value: string) => {
+  return isClient && localStorage.setItem("orderTypeQR", value);
+};
+
+export const getTableTypeQRFromLocalStorage = () => {
+  return isClient ? localStorage.getItem("tableTypeQR") : null;
+};
+
+export const setTableTypeQRFromLocalStorage = (value: string) => {
+  return isClient && localStorage.setItem("tableTypeQR", value);
+};
+
+
 export const removeTokenFromLocalStorage = () => {
   isClient && localStorage.removeItem("accessToken");
   isClient && localStorage.removeItem("refreshToken");
   isClient && localStorage.removeItem("tableNumber");
+  isClient && localStorage.removeItem("orderTypeQR");
+  isClient && localStorage.removeItem("tableTypeQR");
 };
 
 export const checkAndRefreshToken = async (params?: {
@@ -156,6 +175,17 @@ export const getVietnameseTableStatus = (status: (typeof TableStatus)[keyof type
   }
 };
 
+export const getVietnameseOrderModeStatus = (status: (typeof OrderModeType)[keyof typeof OrderModeType]) => {
+  switch (status) {
+    case OrderModeType.DINE_IN:
+      return "Ăn tại chỗ";
+    case OrderModeType.TAKE_OUT:
+      return "Mang đi";
+    default:
+      return "Ăn tại chỗ";
+  }
+};
+
 export const getVietnameseOrderStatus = (status: (typeof OrderStatus)[keyof typeof OrderStatus]) => {
   switch (status) {
     case OrderStatus.Delivered:
@@ -186,8 +216,16 @@ export const getVietnameseGuestCallStatus = (
   }
 };
 
-export const getTableLink = ({ token, tableNumber }: { token: string; tableNumber: number }) => {
-  return envConfig.NEXT_PUBLIC_URL + "/tables/" + tableNumber + "?token=" + token;
+export const getTableLink = ({
+  token,
+  tableNumber,
+  type,
+}: {
+  token: string;
+  tableNumber: number;
+  type: string;
+}) => {
+  return envConfig.NEXT_PUBLIC_URL + "/tables/" + tableNumber + "?token=" + token + "&typeQR=" + type;
 };
 
 export const decodeToken = (token: string) => {

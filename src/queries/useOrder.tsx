@@ -50,3 +50,18 @@ export const useCreateOrderMutation = () => {
     },
   });
 };
+
+export const useCountOrderTodayQuery = (
+  params: GetOrdersQueryParamsType,
+  { enabled }: { enabled: boolean },
+) => {
+  return useQuery({
+    queryKey: ["count-order-today", params],
+    queryFn: () => {
+      return orderApiRequest.getCountOrderToday(params);
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60, // 1 minute,
+    enabled: enabled,
+  });
+};

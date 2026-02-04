@@ -21,6 +21,7 @@ export default function DropdownAvatar() {
   const socket = useAppStore((state) => state.socket);
   const setSocket = useAppStore((state) => state.setSocket);
   const setIsRole = useAppStore((state) => state.setIsRole);
+  const setInfoGuest = useAppStore((state) => state.setInfoGuest);
 
   const logoutMutation = useLogoutMutation();
 
@@ -39,6 +40,8 @@ export default function DropdownAvatar() {
       setIsRole(undefined);
       setSocket(undefined);
       socket?.disconnect();
+
+      setInfoGuest(undefined);
     } catch (error) {
       handleErrorApi({
         errors: error,

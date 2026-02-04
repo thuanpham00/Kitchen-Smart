@@ -12,6 +12,7 @@ export default function NavLinks() {
   const pathname = usePathname();
   const isRole = useAppStore((state) => state.isRole);
   const countGuestCalls = useAppStore((state) => state.countGuestCalls);
+  const countOrderToday = useAppStore((state) => state.countOrderToday);
 
   return (
     <TooltipProvider>
@@ -36,6 +37,7 @@ export default function NavLinks() {
             if (!Item.roles.includes(isRole as "Owner" | "Employee")) return null;
             const isActive = pathname.includes(Item.href);
             const isCallGuest = Item.href === "/manage/call-waiters";
+            const isOrderToday = Item.href === "/manage/orders";
             return (
               <Tooltip key={index}>
                 <TooltipTrigger asChild>
@@ -52,6 +54,11 @@ export default function NavLinks() {
                     {isCallGuest && (
                       <span className="absolute top-0 left-7.5 w-4 h-4 bg-red-500 rounded-full text-white text-xs text-center block">
                         {countGuestCalls}
+                      </span>
+                    )}
+                    {isOrderToday && (
+                      <span className="absolute top-0 left-7.5 w-4 h-4 bg-red-500 rounded-full text-white text-xs text-center block">
+                        {countOrderToday}
                       </span>
                     )}
                     <Item.Icon className="h-5 w-5" />

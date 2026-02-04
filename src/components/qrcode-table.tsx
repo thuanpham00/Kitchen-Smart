@@ -6,10 +6,12 @@ import { getTableLink } from "@/lib/utils";
 export default function QrCodeTable({
   token,
   tableNumber,
+  type,
   width = 250,
 }: {
   token: string;
   tableNumber: number;
+  type: string;
   width?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,13 +38,14 @@ export default function QrCodeTable({
       getTableLink({
         token: token,
         tableNumber: tableNumber,
+        type, // qr mang về hay ăn tại quán
       }),
       { width },
       (error) => {
         if (error) console.error(error);
         canvasContext.drawImage(virtualCanvas, 0, 0, width, width);
-      }
+      },
     );
-  }, [token, tableNumber, width]);
+  }, [token, tableNumber, width, type]);
   return <canvas ref={canvasRef} />;
 }

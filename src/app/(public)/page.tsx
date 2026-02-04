@@ -40,7 +40,7 @@ export default async function Home() {
               <Star className="w-6 h-6 text-orange-400 fill-orange-400" />
             </div>
           </div>
-          <p className="text-white text-lg md:text-xl max-w-3xl mx-auto leading-relaxed px-4">
+          <p className="text-black dark:text-white text-lg md:text-xl max-w-3xl mx-auto leading-relaxed px-4">
             Khám phá danh sách các món ăn được yêu thích nhất, bao gồm món chính, đồ uống và tráng miệng, để
             có trải nghiệm ẩm thực đích thực!
           </p>
@@ -55,7 +55,7 @@ export default async function Home() {
               {listDishSuggested.map((dish, index) => (
                 <div
                   key={dish.id}
-                  className="group relative backdrop-blur-sm rounded-2xl overflow-hidden shadow-xl border-2 border-gray-700/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
+                  className="group relative backdrop-blur-sm rounded-2xl overflow-hidden shadow-xl border-2 border-gray-200 dark:border-gray-700/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   {/* Glow effect */}
@@ -83,17 +83,17 @@ export default async function Home() {
 
                   {/* Content */}
                   <div className="relative p-6">
-                    <h3 className="text-white text-xl md:text-2xl font-bold mb-3 line-clamp-1 group-hover:text-orange-400 transition-colors duration-300">
+                    <h3 className="text-orange-400 dark:text-orange-400 text-xl md:text-2xl font-bold mb-3 line-clamp-1 transition-colors duration-300">
                       {dish.dish.name}
                     </h3>
 
-                    <p className="text-gray-400 text-sm md:text-base mb-4 line-clamp-2 leading-relaxed">
+                    <p className="text-black dark:text-gray-400 text-sm md:text-base mb-4 line-clamp-2 leading-relaxed h-12">
                       {dish.dish.description || "Món ăn đặc biệt với hương vị tuyệt vời"}
                     </p>
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold text-orange-400">
+                        <span className="text-2xl font-bold text-black dark:text-white">
                           {formatCurrency(Number(dish.price))}
                         </span>
                       </div>
@@ -101,7 +101,7 @@ export default async function Home() {
                       {/* Action Button */}
                       <Link
                         href={`/dishes/${dish.id}`}
-                        className="text-white hover:underline transition-all duration-300 group/btn block"
+                        className="text-gray-600 dark:text-white hover:underline transition-all duration-300 group/btn block"
                       >
                         <span>Xem chi tiết</span>
                       </Link>
@@ -170,10 +170,10 @@ export default async function Home() {
       {/* Gallery Section */}
       <section className="py-16 px-6 sm:px-8 lg:px-33.75">
         <div className="text-center mb-16">
-          <h2 className="text-white text-xl md:text-2xl lg:text-3xl font-medium mb-6">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-linear-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">
             Ghé thăm nhà hàng của chúng tôi
           </h2>
-          <p className="text-white/80 text-lg max-w-2xl mx-auto">
+          <p className="mt-4 text-black dark:text-white/80 text-lg max-w-2xl mx-auto">
             Thực đơn phong cách đồng quê chất lượng, dịch vụ thân thiện và hiệu quả, kết hợp với giá trị thực
             sự đã khiến nhà hàng của chúng tôi phục vụ các gia đình như bạn trong hơn 5 năm.
           </p>
@@ -251,7 +251,7 @@ export default async function Home() {
       </section>
 
       {/* Features Banner */}
-      <section className="relative overflow-hidden py-12">
+      <section className="relative overflow-hidden pt-12 pb-16">
         {/* Animated background pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.3),transparent_50%)]" />
@@ -260,10 +260,10 @@ export default async function Home() {
         <div className="relative z-10 px-6 sm:px-8 lg:px-33.75">
           {/* Section Header */}
           <div className="text-center mb-12">
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-3 drop-shadow-lg">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-linear-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent mb-3">
               Tại sao chọn chúng tôi?
             </h2>
-            <div className="w-24 h-1 bg-white/80 mx-auto rounded-full" />
+            <div className="mt-4 h-1 w-32 mx-auto bg-linear-to-r from-transparent via-orange-400 to-transparent rounded-full" />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
@@ -333,10 +333,10 @@ export default async function Home() {
 
                 {/* Text Content */}
                 <div className="text-center">
-                  <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-white mb-1 group-hover:text-yellow-100 transition-colors duration-300 drop-shadow-md">
+                  <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-black/60 dark:text-white mb-1 transition-colors duration-300 drop-shadow-md">
                     {feature.title}
                   </h3>
-                  <p className="text-sm text-white/80 group-hover:text-white transition-colors duration-300">
+                  <p className="text-sm text-gray-500 dark:text-white/80 transition-colors duration-300">
                     {feature.description}
                   </p>
                 </div>
@@ -344,9 +344,6 @@ export default async function Home() {
             ))}
           </div>
         </div>
-
-        {/* Bottom decorative wave */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-white/30 to-transparent" />
       </section>
     </div>
   );

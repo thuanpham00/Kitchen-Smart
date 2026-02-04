@@ -1,7 +1,7 @@
 "use client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
-
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 export default function ModalDishIntercepting({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   return (
@@ -13,7 +13,15 @@ export default function ModalDishIntercepting({ children }: { children: React.Re
         }
       }}
     >
-      <DialogContent className="max-w-225! w-full!">{children}</DialogContent>
+      <DialogContent className="max-w-225! w-full!">
+        <VisuallyHidden>
+          <DialogHeader>
+            <DialogTitle>Tiêu đề dialog</DialogTitle>
+            <DialogDescription>Mô tả nội dung</DialogDescription>
+          </DialogHeader>
+        </VisuallyHidden>
+        {children}
+      </DialogContent>
     </Dialog>
   );
 }

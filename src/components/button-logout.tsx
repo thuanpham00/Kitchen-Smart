@@ -10,6 +10,7 @@ export default function ButtonLogout() {
   const socket = useAppStore((state) => state.socket);
   const setSocket = useAppStore((state) => state.setSocket);
   const setIsRole = useAppStore((state) => state.setIsRole);
+  const setInfoGuest = useAppStore((state) => state.setInfoGuest);
 
   const isAuth = useAppStore((state) => state.isAuth);
   const isRole = useAppStore((state) => state.isRole);
@@ -32,6 +33,8 @@ export default function ButtonLogout() {
       setIsRole(undefined);
       setSocket(undefined);
       socket?.disconnect();
+
+      setInfoGuest(undefined);
     } catch (error) {
       handleErrorApi({
         errors: error,

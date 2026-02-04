@@ -1,7 +1,7 @@
 "use client";
 import { useGuestOrderQuery } from "@/queries/useGuest";
 import Image from "next/image";
-import { OrderStatus } from "@/constants/type";
+import { OrderModeType, OrderStatus } from "@/constants/type";
 import { useEffect } from "react";
 import {
   CreateOrdersResType,
@@ -165,7 +165,13 @@ export default function OrdersCart() {
                     {orderStatusMap[order.status].label}
                   </span>
                 </div>
-                <p className="text-xs">{order.dishSnapshot.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs">Hình thức:</span>
+                  <span className="text-sm font-semibold">
+                    {order.orderMode === OrderModeType.DINE_IN ? "Tại chỗ" : "Mang đi"}
+                  </span>
+                </div>
+
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <span className="text-xs">Số lượng:</span>

@@ -110,7 +110,6 @@ export function DishesDialog({ onChoose }: { onChoose: (menuItem: MenuItem) => v
   }, [table]);
 
   const choose = (menuItem: MenuItem) => {
-    console.log(menuItem);
     onChoose(menuItem); // chuyển dữ liệu từ child lên parent thông qua hàm onChoose (props)
     setOpen(false);
   };

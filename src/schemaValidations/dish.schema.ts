@@ -32,6 +32,8 @@ export const DishSchema = z.object({
   searchKeywords: z.string(),
   popularity: z.number(), // lượt order món ăn
 
+  ingredients: z.array(z.string()).nullable().optional(),
+
   createdAt: z.date(),
   updatedAt: z.date(),
 });

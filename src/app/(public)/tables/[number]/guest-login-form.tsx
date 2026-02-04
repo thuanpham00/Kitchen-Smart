@@ -8,11 +8,18 @@ import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GuestLoginBody, GuestLoginBodyType } from "@/schemaValidations/guest.schema";
 import { useGuestLoginMutation } from "@/queries/useGuest";
-import { generateSocket, handleErrorApi, setTableNumberFromLocalStorage } from "@/lib/utils";
+import {
+  generateSocket,
+  handleErrorApi,
+  setOrderTypeQRFromLocalStorage,
+  setTableNumberFromLocalStorage,
+  setTableTypeQRFromLocalStorage,
+} from "@/lib/utils";
 import { toast } from "sonner";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useAppStore } from "@/components/app-provider";
+import { OrderMode, OrderModeType } from "@/constants/type";
 
 export default function GuestLoginForm() {
   const setSocket = useAppStore((state) => state.setSocket);
@@ -22,6 +29,8 @@ export default function GuestLoginForm() {
   const searchParams = useSearchParams();
   const params = useParams();
   const tokenTable = searchParams.get("token");
+  const typeQR = searchParams.get("typeQR") as OrderMode;
+
   const tableNumber = Number(params.number);
   const router = useRouter();
   const useGuestLogin = useGuestLoginMutation();
@@ -52,8 +61,12 @@ export default function GuestLoginForm() {
       setInfoGuest({
         tokenGuestId: result.payload.data.accessToken,
         tableNumber: tableNumber.toString(),
+        orderTypeQR: typeQR || OrderModeType.DINE_IN, // cái này có thể bị đổi
+        tableTypeQR: typeQR || OrderModeType.DINE_IN, // cái này thì không đổi
       });
       setTableNumberFromLocalStorage(tableNumber.toString());
+      setOrderTypeQRFromLocalStorage(typeQR || OrderModeType.DINE_IN);
+      setTableTypeQRFromLocalStorage(typeQR || OrderModeType.DINE_IN);
       router.push("/guest/menu");
     } catch (error) {
       handleErrorApi({

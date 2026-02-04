@@ -3,7 +3,7 @@ import { Users } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { OrderStatusIcon, cn, getVietnameseOrderStatus } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { OrderStatus, OrderStatusValues } from "@/constants/type";
+import { OrderModeType, OrderStatus, OrderStatusValues } from "@/constants/type";
 import { TableListResType } from "@/schemaValidations/table.schema";
 import { Badge } from "@/components/ui/badge";
 import { ServingGuestByTableNumber, Statics, StatusCountObject } from "@/app/manage/orders/order-table";
@@ -68,11 +68,14 @@ export default function OrderStatics({
           <div>
             {selectedServingGuest &&
               Object.keys(selectedServingGuest).map((guestId, index) => {
-                console.log(guestId);
                 const orders = selectedServingGuest[Number(guestId)];
                 return (
                   <div key={guestId}>
-                    <OrderGuestDetail guest={orders[0].guest} orders={orders} setSelectedTableNumber={setSelectedTableNumber}/>
+                    <OrderGuestDetail
+                      guest={orders[0].guest}
+                      orders={orders}
+                      setSelectedTableNumber={setSelectedTableNumber}
+                    />
                     {index !== Object.keys(selectedServingGuest).length - 1 && <Separator className="my-5" />}
                   </div>
                 );
@@ -82,7 +85,9 @@ export default function OrderStatics({
       </Dialog>
       <div className="grid grid-cols-6 gap-4 py-4">
         {tableList.map((table) => {
+          console.log(tableList);
           const tableNumber: number = table.number;
+          const typeTable = table.typeQR;
           const tableStatics: Record<number, StatusCountObject> | undefined = statics.table[tableNumber];
           let isEmptyTable = true;
           let countObject: StatusCountObject = {
@@ -98,7 +103,7 @@ export default function OrderStatics({
               const guestStatics = tableStatics[Number(guestId)];
               if (
                 [guestStatics.Pending, guestStatics.Processing, guestStatics.Delivered].some(
-                  (status) => status !== 0 && status !== undefined
+                  (status) => status !== 0 && status !== undefined,
                 )
               ) {
                 isEmptyTable = false;
@@ -115,8 +120,9 @@ export default function OrderStatics({
           return (
             <div
               key={tableNumber}
-              className={cn("text-sm flex items-stretch gap-2 border p-2 rounded-md", {
-                "bg-orange-400": !isEmptyTable,
+              className={cn(`text-sm flex items-stretch gap-2 border p-2 rounded-md`, {
+                "bg-orange-400": !isEmptyTable && typeTable === OrderModeType.DINE_IN,
+                "bg-red-500": !isEmptyTable && typeTable === OrderModeType.TAKE_OUT,
                 "border-transparent": !isEmptyTable,
               })}
               onClick={() => {
@@ -124,7 +130,9 @@ export default function OrderStatics({
               }}
             >
               <div className="flex flex-col items-center justify-center gap-2">
-                <div className="font-semibold text-center text-lg">Bàn {tableNumber}</div>
+                <div className="font-semibold text-center text-lg">
+                  {typeTable === OrderModeType.DINE_IN ? `Bàn ${tableNumber} ` : `Mang đi`}
+                </div>
               </div>
               <Separator
                 orientation="vertical"
@@ -180,7 +188,7 @@ export default function OrderStatics({
                         {countObject[OrderStatus.Processing] ?? 0} đơn
                       </TooltipContent>
                     </Tooltip>
-                    
+
                     <Tooltip>
                       <TooltipTrigger>
                         <div className="flex gap-2 items-center">

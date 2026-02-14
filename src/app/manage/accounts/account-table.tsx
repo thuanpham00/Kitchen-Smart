@@ -5,11 +5,17 @@ import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AccountListResType, AccountQueryType, AccountType } from "@/schemaValidations/account.schema";
+import {
+  AccountListResType,
+  AccountQueryType,
+  AccountType,
+  SearchAccount,
+  SearchAccountType,
+} from "@/schemaValidations/account.schema";
 import AddEmployee from "@/app/manage/accounts/add-employee";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EditEmployee from "@/app/manage/accounts/edit-employee";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,8 +31,11 @@ import { useDeleteEmployeeMutation, useGetListEmployeeQuery } from "@/queries/us
 import { toast } from "sonner";
 import useQueryParams from "@/hooks/useQueryParams";
 import { isUndefined, omitBy } from "lodash";
-import useDebounceInput from "@/hooks/useDebounceInput";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormField, FormItem } from "@/components/ui/form";
+import { Search, X } from "lucide-react";
 
 type AccountItem = AccountListResType["data"][0];
 
@@ -164,9 +173,6 @@ export default function AccountTable() {
   const router = useRouter();
   const queryParams = useQueryParams();
 
-  const [searchEmail, setSearchEmail] = useState<string>(queryParams.email || "");
-  const searchValue = useDebounceInput({ value: searchEmail, delay: 1000 });
-
   const limit = queryParams.limit ? Number(queryParams.limit) : 5;
   const page = queryParams.page ? Number(queryParams.page) : 1;
 
@@ -179,18 +185,31 @@ export default function AccountTable() {
     isUndefined,
   ) as AccountQueryType;
 
-  useEffect(() => {
+  const form = useForm<SearchAccountType>({
+    resolver: zodResolver(SearchAccount),
+    defaultValues: {
+      email: queryParams.email || "",
+    },
+  });
+
+  const reset = () => {
     const params = new URLSearchParams(
-      Object.entries({
-        page: 1, // Reset về trang 1 khi search
-        limit,
-        email: searchValue || undefined,
-      })
-        .filter(([, value]) => value !== undefined)
+      Object.entries({ ...queryConfig, email: undefined })
+        .filter(([key, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    form.reset();
+    router.push(`/manage/accounts?${params.toString()}`);
+  };
+
+  const submit = (data: SearchAccountType) => {
+    const params = new URLSearchParams(
+      Object.entries({ ...queryConfig, page: 1, email: data.email })
+        .filter(([key, value]) => value !== undefined && value !== "")
         .map(([key, value]) => [key, String(value)]),
     );
     router.push(`/manage/accounts?${params.toString()}`);
-  }, [searchValue, limit, router]);
+  };
 
   const [employeeIdEdit, setEmployeeIdEdit] = useState<number | undefined>();
   const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(null);
@@ -227,12 +246,34 @@ export default function AccountTable() {
         <EditEmployee id={employeeIdEdit} setId={setEmployeeIdEdit} />
         <AlertDialogDeleteAccount employeeDelete={employeeDelete} setEmployeeDelete={setEmployeeDelete} />
         <div className="flex items-center py-4">
-          <Input
-            placeholder="Filter emails..."
-            value={searchEmail}
-            onChange={(event) => setSearchEmail(event.target.value)}
-            className="max-w-sm"
-          />
+          <Form {...form}>
+            <form
+              noValidate
+              className="flex items-center gap-2 py-4"
+              onReset={reset}
+              onSubmit={form.handleSubmit(submit, (err) => {
+                console.log(err);
+              })}
+            >
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <Input placeholder="Lọc email" className="max-w-sm" {...field} />
+                  </FormItem>
+                )}
+              />
+
+              <Button variant="outline" size="icon" type="reset">
+                <X />
+              </Button>
+
+              <Button variant="outline" size="icon" className="bg-blue-500!" type="submit">
+                <Search />
+              </Button>
+            </form>
+          </Form>
           <div className="ml-auto flex items-center gap-2">
             <AddEmployee />
           </div>

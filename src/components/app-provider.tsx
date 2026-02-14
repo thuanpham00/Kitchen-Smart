@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import RefreshToken from "@/components/refresh-token";
 import { Fragment, useEffect } from "react";
@@ -18,6 +19,7 @@ import { useCountPendingGuestCallTodayQuery } from "@/queries/useGuestCall";
 import { endOfDay, startOfDay } from "date-fns";
 import { OrderMode, Role } from "@/constants/type";
 import { useCountOrderTodayQuery } from "@/queries/useOrder";
+import { useQueryClient } from "@tanstack/react-query";
 
 type InfoGuestType = {
   tokenGuestId: string;
@@ -41,6 +43,10 @@ type AppStoreType = {
 
   countOrderToday: number;
   setCountOrderToday: (countOrderToday: number) => void;
+
+  // Lưu data serving guests theo bàn để truyền sang trang detail
+  selectedTableGuests: any;
+  setSelectedTableGuests: (data: any) => void;
 };
 
 // dùng zustand
@@ -64,6 +70,9 @@ export const useAppStore = create<AppStoreType>((set) => ({
 
   countOrderToday: 0,
   setCountOrderToday: (countOrderToday: number) => set({ countOrderToday }),
+
+  selectedTableGuests: null,
+  setSelectedTableGuests: (data: any) => set({ selectedTableGuests: data }),
 }));
 
 // setup React Query ở cấp cao nhất của ứng dụng
@@ -77,6 +86,8 @@ export default function AppProvider({ children }: { children: React.ReactNode })
   const setInfoGuest = useAppStore((state) => state.setInfoGuest);
   const setCountGuestCalls = useAppStore((state) => state.setCountGuestCalls);
   const setCountOrderToday = useAppStore((state) => state.setCountOrderToday);
+
+  const queryClient = useQueryClient();
 
   // lấy số cuộc gọi phục vụ từ khách hôm nay (pending)
   const countPending = useCountPendingGuestCallTodayQuery(
@@ -144,18 +155,24 @@ export default function AppProvider({ children }: { children: React.ReactNode })
     }
 
     function onCountOrder() {
-      countOrder.refetch();
+      countOrder.refetch(); // đếm số lượng order hôm nay
+    }
+
+    function onUpdateStatusTable() {
+      queryClient.invalidateQueries({ queryKey: ["tables"] }); // cập nhật lại danh sách bàn khi có order mới
     }
 
     // đếm số cuộc gọi phục vụ từ khách (global toàn app)
     socket.on("count-call-waiter", onGuestCallListener);
     socket.on("count-order", onCountOrder);
+    socket.on("update-status-table", onUpdateStatusTable);
 
     return () => {
       socket.off("count-call-waiter", onGuestCallListener);
       socket.off("count-order", onCountOrder);
+      socket.off("update-status-table", onUpdateStatusTable);
     };
-  }, [socket, setCountGuestCalls, countPending, countOrder]);
+  }, [socket, setCountGuestCalls, countPending, countOrder, queryClient]);
 
   return (
     <Fragment>

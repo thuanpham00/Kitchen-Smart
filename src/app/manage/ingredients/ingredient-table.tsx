@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,19 +20,24 @@ import {
 import { handleErrorApi } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
-import { DishQueryType } from "@/schemaValidations/dish.schema";
 import { toast } from "sonner";
 import useQueryParams from "@/hooks/useQueryParams";
 import { isUndefined, omitBy } from "lodash";
-import useDebounceInput from "@/hooks/useDebounceInput";
 import { Badge } from "@/components/ui/badge";
-import SelectCategory from "@/app/manage/dishes/SelectCategory";
 import { useDeleteIngredientMutation, useGetListIngredientQuery } from "@/queries/useIngredient";
-import { IngredientListResType, IngredientQueryType } from "@/schemaValidations/ingredient.schema";
+import {
+  IngredientListResType,
+  IngredientQueryType,
+  SearchIngredient,
+  SearchIngredientType,
+} from "@/schemaValidations/ingredient.schema";
 import AddIngredient from "@/app/manage/ingredients/add-ingredient";
 import EditIngredient from "@/app/manage/ingredients/edit-ingredient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormField, FormItem } from "@/components/ui/form";
 
 type IngredientItem = IngredientListResType["data"][0];
 
@@ -231,9 +236,6 @@ export default function IngredientTable() {
   const router = useRouter();
   const queryParams = useQueryParams();
 
-  const [searchName, setSearchName] = useState<string>(queryParams.name || "");
-  const searchValue = useDebounceInput({ value: searchName, delay: 1000 });
-
   const limit = queryParams.limit ? Number(queryParams.limit) : 10;
   const page = queryParams.page ? Number(queryParams.page) : 1;
 
@@ -247,19 +249,32 @@ export default function IngredientTable() {
     isUndefined,
   ) as IngredientQueryType;
 
-  useEffect(() => {
+  const form = useForm<SearchIngredientType>({
+    resolver: zodResolver(SearchIngredient),
+    defaultValues: {
+      name: queryParams.name || "",
+      category: queryParams.category || "",
+    },
+  });
+
+  const reset = () => {
     const params = new URLSearchParams(
-      Object.entries({
-        page: 1, // Reset về trang 1 khi search
-        limit,
-        category: queryConfig.category,
-        name: searchValue || undefined,
-      })
-        .filter(([, value]) => value !== undefined)
+      Object.entries({ ...queryConfig, category: undefined, name: undefined })
+        .filter(([key, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    form.reset();
+    router.push(`/manage/ingredients?${params.toString()}`);
+  };
+
+  const submit = (data: SearchIngredientType) => {
+    const params = new URLSearchParams(
+      Object.entries({ ...queryConfig, page: 1, name: data.name, category: data.category })
+        .filter(([key, value]) => value !== undefined && value !== "")
         .map(([key, value]) => [key, String(value)]),
     );
     router.push(`/manage/ingredients?${params.toString()}`);
-  }, [searchValue, limit, queryConfig.category, router]);
+  };
 
   const [ingredientIdEdit, setIngredientIdEdit] = useState<number | undefined>();
   const [ingredientDelete, setIngredientDelete] = useState<IngredientItem | null>(null);
@@ -313,54 +328,59 @@ export default function IngredientTable() {
         </div>
 
         <div className="flex items-center gap-2 py-4">
-          <Input
-            placeholder="Lọc tên"
-            value={searchName}
-            onChange={(event) => setSearchName(event.target.value)}
-            className="max-w-sm"
-          />
+          <Form {...form}>
+            <form
+              noValidate
+              className="flex items-center gap-2 py-4"
+              onReset={reset}
+              onSubmit={form.handleSubmit(submit, (err) => {
+                console.log(err);
+              })}
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <Input placeholder="Lọc tên" className="max-w-sm" {...field} />
+                  </FormItem>
+                )}
+              />
 
-          <Select
-            value={queryConfig.category}
-            onValueChange={(value) => {
-              const params = new URLSearchParams(
-                Object.entries({
-                  ...queryConfig,
-                  page: 1,
-                  category: value || undefined,
-                })
-                  .filter(([, value]) => value !== undefined)
-                  .map(([key, value]) => [key, String(value)]),
-              );
-              router.push(`/manage/ingredients?${params.toString()}`);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn nhóm nguyên liệu" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="rau-cu">Rau củ</SelectItem>
-              <SelectItem value="thit-ca">Thịt cá</SelectItem>
-              <SelectItem value="gia-vi">Gia vị</SelectItem>
-              <SelectItem value="khac">Khác</SelectItem>
-            </SelectContent>
-          </Select>
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                      }}
+                      value={field.value}
+                    >
+                      <SelectTrigger className="w-52">
+                        <SelectValue placeholder="Chọn nhóm nguyên liệu" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rau-cu">Rau củ</SelectItem>
+                        <SelectItem value="thit-ca">Thịt cá</SelectItem>
+                        <SelectItem value="gia-vi">Gia vị</SelectItem>
+                        <SelectItem value="khac">Khác</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              const params = new URLSearchParams(
-                Object.entries({ ...queryConfig, category: undefined })
-                  .filter(([, value]) => value !== undefined)
-                  .map(([key, value]) => [key, String(value)]),
-              );
-              console.log("hihi");
-              router.push(`/manage/ingredients?${params.toString()}`);
-            }}
-          >
-            <X />
-          </Button>
+              <Button variant="outline" size="icon" type="reset">
+                <X />
+              </Button>
+
+              <Button variant="outline" size="icon" className="bg-blue-500!" type="submit">
+                <Search />
+              </Button>
+            </form>
+          </Form>
 
           <div className="ml-auto flex items-center gap-2">
             <AddIngredient />

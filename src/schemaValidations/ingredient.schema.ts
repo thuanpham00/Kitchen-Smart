@@ -1,6 +1,13 @@
 import { BaseQuery, PaginationRes } from "@/schemaValidations/util.schema";
 import z from "zod";
 
+export const SearchIngredient = z.object({
+  name: z.string().max(256).optional(),
+  category: z.string().max(256).optional(),
+});
+
+export type SearchIngredientType = z.TypeOf<typeof SearchIngredient>;
+
 export const IngredientQuery = BaseQuery.and(
   z.object({
     name: z.string().trim().max(256).optional(),

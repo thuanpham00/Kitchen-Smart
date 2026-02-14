@@ -193,12 +193,29 @@ export default function MenuOrder() {
 
   return (
     <div>
-      <div className="relative mb-4">
-        <h1 className="text-center text-xl font-bold">
-          {menuActive?.name ? menuActive.name : "Menu quán"} -{" "}
-          <Badge variant="default">{menuActive?.menuItems.length} món ăn</Badge>
-        </h1>
-        <div className="absolute top-0 right-0 flex items-center justify-end gap-2">
+      <h1 className="text-center text-xl font-bold">
+        {menuActive?.name ? menuActive.name : "Menu quán"} -{" "}
+        <Badge variant="default">{menuActive?.menuItems.length} món ăn</Badge>
+      </h1>
+      <div className="my-4 flex flex-col gap-2 sm:flex-row items-center justify-between">
+        <div className="bg-green-500 text-white rounded-md py-2 px-4 font-semibold">
+          {infoGuest?.tableTypeQR === OrderModeType.DINE_IN ? `Bàn ${infoGuest.tableNumber}` : "Mang đi"}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            className="inline-flex items-center justify-between dark:bg-white!"
+            onClick={() => {
+              if (orders.length === 0) {
+                toast.error("Vui lòng chọn món ăn trước khi gọi món");
+                return;
+              }
+              setOpen(true);
+            }}
+          >
+            <span>Gọi món · {orders.length} món</span>
+            <span>{formatCurrency(totalPriceOrder)} </span>
+          </Button>
+
           {(infoGuest?.orderTypeQR === OrderModeType.DINE_IN ||
             infoGuest?.tableTypeQR === OrderModeType.DINE_IN) && (
             <Fragment>
@@ -273,12 +290,11 @@ export default function MenuOrder() {
                 key={categoryName}
                 onClick={() => setSelectedCategory(categoryName)}
                 className={cn(
-                  "w-full text-left! justify-start py-6 dark:bg-card! dark:text-foreground bg-card text-foreground border-b border-gray-300 dark:border-white/60 hover:bg-background rounded-none",
+                  "uppercase tracking-wide w-full text-left! justify-start py-6 dark:bg-card! dark:text-foreground bg-card text-foreground border-b border-gray-300 dark:border-white/60 hover:bg-background rounded-none",
                   {
-                    "rounded-t-lg!": index === 0,
-                    "rounded-b-lg! border-b-0": index === listSortCategory.length - 1,
-                    "dark:bg-red-600! bg-red-600! text-white dark:text-accent-foreground":
-                      selectedCategory === categoryName,
+                    "rounded-t-sm!": index === 0,
+                    "rounded-b-sm! border-b-0": index === listSortCategory.length - 1,
+                    "dark:bg-white! bg-black! text-white dark:text-black": selectedCategory === categoryName,
                   },
                 )}
               >
@@ -295,9 +311,26 @@ export default function MenuOrder() {
               </Button>
             );
           })}
+
+          <div className="flex flex-col justify-end mt-4">
+            <div className="flex flex-col gap-2">
+              <Button
+                className="flex-1 block text-center bg-green-500 hover:bg-green-600 text-white"
+                onClick={() => toast.info("Chức năng đang phát triển")}
+              >
+                <span>Chatbot tư vấn</span>
+              </Button>
+              <Button
+                className="flex-1 block text-center bg-yellow-500 hover:bg-yellow-600 text-white"
+                onClick={() => handleCallWaiter()}
+              >
+                <span>Gọi nhân viên</span>
+              </Button>
+            </div>
+          </div>
         </div>
         <div className="col-span-4 lg:col-span-5">
-          <div className="flex flex-col h-[calc(100vh-210px)] overflow-y-auto gap-6 py-2 mb-2">
+          <div className="flex flex-col h-[calc(100vh-210px)] overflow-y-auto gap-6 pb-2 mb-2">
             <div className="space-y-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {listDishInSelectedCategory.map((item) => {
                 const dish = item.dish;
@@ -315,25 +348,23 @@ export default function MenuOrder() {
                       />
                       {isOutOfStock && (
                         <div>
-                          <div className="absolute inset-0 w-full h-62.5 z-1 bg-gray-200 opacity-25 rounded-md"></div>
-                          <div className="absolute top-1/2 left-1/2 z-1 -translate-x-1/2 -translate-y-1/2 rounded-md w-full">
-                            <span className="p-3 rounded-lg font-semibold text-sm bg-white text-black w-full block text-center">
-                              Hết hàng
-                            </span>
+                          <div className="absolute inset-0 w-full h-62.5 z-1 bg-gray-700 opacity-50 rounded-md"></div>
+                          <div className="p-3 absolute top-1/2 left-1/2 z-1 -translate-x-1/2 -translate-y-1/2 rounded-lg font-semibold text-sm text-white block text-center w-24 border-2 border-white">
+                            Hết hàng
                           </div>
                         </div>
                       )}
                     </div>
-                    <div className="px-3 pt-2 pb-4 bg-border rounded-bl-md rounded-br-md">
+                    <div className="px-3 pt-2 pb-4 bg-gray-100 dark:bg-border rounded-bl-md rounded-br-md">
                       <h3 className="text-[15px] font-semibold line-clamp-1">{dish.name}</h3>
                       <p className="text-xs text-muted-foreground line-clamp-2 h-10">{dish.description}</p>
                       <div className="flex justify-between items-center">
                         <div className="text-sm font-bold text-white bg-linear-to-r from-orange-500 to-amber-500 inline-block px-3 py-1 rounded-lg shadow-lg">
-                          {formatCurrency(dish.price)}
+                          {formatCurrency(item.price)}
                         </div>
                         <Quantity
                           value={orders.find((order) => order.menuItemId === item.id)?.quantity || 0}
-                          onChange={(quantity) => handleChangeQuantity(item.id, quantity, dish.price)}
+                          onChange={(quantity) => handleChangeQuantity(item.id, quantity, item.price)}
                           status={item.status}
                         />
                       </div>
@@ -342,35 +373,6 @@ export default function MenuOrder() {
                 );
               })}
             </div>
-          </div>
-          <div className="sticky bottom-0 border-t-2 pt-2 flex flex-col lg:flex-row justify-between gap-2">
-            <div className="order-2 lg:order-1 flex gap-2">
-              <Button
-                className="flex-1 lg:w-52 block text-center bg-green-500 hover:bg-green-600 text-white"
-                onClick={() => toast.info("Chức năng đang phát triển")}
-              >
-                <span>Chatbot tư vấn</span>
-              </Button>
-              <Button
-                className="flex-1 lg:w-48 block text-center bg-yellow-500 hover:bg-yellow-600 text-white"
-                onClick={() => handleCallWaiter()}
-              >
-                <span>Gọi nhân viên</span>
-              </Button>
-            </div>
-            <Button
-              className="w-full lg:w-62 justify-between order-1 lg:order-2 dark:bg-white!"
-              onClick={() => {
-                if (orders.length === 0) {
-                  toast.error("Vui lòng chọn món ăn trước khi gọi món");
-                  return;
-                }
-                setOpen(true);
-              }}
-            >
-              <span>Gọi món · {orders.length} món</span>
-              <span>{formatCurrency(totalPriceOrder)} </span>
-            </Button>
           </div>
         </div>
       </div>

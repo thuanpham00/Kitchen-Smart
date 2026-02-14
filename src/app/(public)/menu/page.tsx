@@ -48,7 +48,7 @@ export default async function MenuPage() {
   return (
     <section className="space-y-10 p-4 md:p-8">
       <div
-        className="text-center space-y-4 p-32 rounded-xl"
+        className="text-center space-y-4 p-20 sm:p-40 rounded-xl"
         style={{
           backgroundImage: `url(${bgLogin.src})`,
           backgroundPosition: "center",
@@ -56,7 +56,7 @@ export default async function MenuPage() {
           backgroundRepeat: "no-repeat",
         }}
       >
-        <h2 className="text-3xl font-bold text-primary">{menuActive.name}</h2>
+        <h2 className="text-3xl font-bold text-white dark:text-primary">{menuActive.name}</h2>
         {menuActive.description && <p className="text-white max-w-2xl mx-auto">{menuActive.description}</p>}
         <div className="flex items-center justify-center">
           <Badge variant="default">{menuActive.menuItems.length} món ăn</Badge>
@@ -93,7 +93,7 @@ export default async function MenuPage() {
 
                 return (
                   <Link
-                    className="group relative flex flex-col bg-border border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-2 cursor-pointer overflow-hidden rounded-lg"
+                    className="group relative flex flex-col bg-gray-50 dark:bg-border shadow border border-border transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-2 cursor-pointer overflow-hidden rounded-lg"
                     key={menuItem.id}
                     href={`/dishes/${menuItem.id}`}
                   >
@@ -120,7 +120,7 @@ export default async function MenuPage() {
                       </div>
 
                       <div className="pt-3 border-t border-border/50">
-                        <div className="flex items-end justify-between">
+                        <div className="flex items-center justify-between">
                           <div className="text-sm font-bold text-white bg-linear-to-r from-orange-500 to-amber-500 inline-block px-3 py-1 rounded-lg shadow-lg">
                             {formatCurrency(dish.price)}
                           </div>

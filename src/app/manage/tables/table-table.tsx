@@ -1,11 +1,8 @@
-/* eslint-disable react-hooks/incompatible-library */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   AlertDialog,
@@ -20,18 +17,41 @@ import {
 import { getVietnameseTableStatus } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
-import { TableListResType, TableQueryType } from "@/schemaValidations/table.schema";
+import {
+  SearchTable,
+  SearchTableType,
+  TableListResType,
+  TableQueryType,
+} from "@/schemaValidations/table.schema";
 import EditTable from "@/app/manage/tables/edit-table";
 import AddTable from "@/app/manage/tables/add-table";
 import { useDeleteTableMutation, useGetListTableQuery } from "@/queries/useTable";
 import QrCodeTable from "@/components/qrcode-table";
 import { toast } from "sonner";
 import useQueryParams from "@/hooks/useQueryParams";
-import useDebounceInput from "@/hooks/useDebounceInput";
 import { isUndefined, omitBy } from "lodash";
 import { OrderModeType } from "@/constants/type";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormField, FormItem } from "@/components/ui/form";
+import { Search, X } from "lucide-react";
+import { useAppStore } from "@/components/app-provider";
+import { GuestCreateOrdersResType } from "@/schemaValidations/guest.schema";
 
 type TableItem = TableListResType["data"][0];
+
+const getTableStatusColor = (status: string) => {
+  switch (status) {
+    case "Available":
+      return "bg-green-100 text-green-800 border-green-300";
+    case "Serving":
+      return "bg-orange-100 text-orange-800 border-orange-300";
+    case "Hidden":
+      return "bg-gray-100 text-gray-800 border-gray-300";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-300";
+  }
+};
 
 const TableTableContext = createContext<{
   setTableIdEdit: (value: number) => void;
@@ -44,88 +64,6 @@ const TableTableContext = createContext<{
   tableDelete: null,
   setTableDelete: (value: TableItem | null) => {},
 });
-
-export const columns: ColumnDef<TableItem>[] = [
-  {
-    accessorKey: "number",
-    header: "Số bàn",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("number")}</div>,
-    filterFn: (row, id, filterValue) => {
-      if (!filterValue) return true;
-      return String(filterValue) === String(row.getValue("number"));
-    },
-  },
-  {
-    accessorKey: "capacity",
-    header: "Sức chứa",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("capacity")}</div>,
-  },
-  {
-    accessorKey: "status",
-    header: "Trạng thái",
-    cell: ({ row }) => <div>{getVietnameseTableStatus(row.getValue("status"))}</div>,
-  },
-  {
-    accessorKey: "token",
-    header: "QR Code",
-    cell: ({ row }) => (
-      <div>
-        <QrCodeTable
-          token={row.getValue("token")}
-          tableNumber={row.getValue("number")}
-          type={row.original.typeQR}
-        />
-      </div>
-    ),
-  },
-  {
-    accessorKey: "typeQR",
-    header: "Loại mã QR",
-    cell: ({ row }) => (
-      <div>
-        {row.original.typeQR === OrderModeType.DINE_IN ? (
-          <Badge variant="default" className="bg-blue-100 text-blue-800">
-            QR dành cho tại bàn
-          </Badge>
-        ) : (
-          <Badge variant="default" className="bg-orange-100 text-orange-800">
-            QR dành cho mang về
-          </Badge>
-        )}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "notes",
-    header: "Ghi chú",
-    cell: ({ row }) => <div>{row.getValue("notes")}</div>,
-  },
-  {
-    id: "actions",
-    header: "Hành động",
-    cell: function Actions({ row }) {
-      const { setTableIdEdit, setTableDelete } = useContext(TableTableContext);
-      const openEditTable = () => {
-        setTableIdEdit(row.original.number);
-      };
-
-      const openDeleteTable = () => {
-        setTableDelete(row.original);
-      };
-
-      return (
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={openEditTable} className="bg-blue-500 hover:bg-blue-400 text-white">
-            Sửa
-          </Button>
-          <Button size="sm" onClick={openDeleteTable} className="bg-red-500 hover:bg-red-400 text-white">
-            Xóa
-          </Button>
-        </div>
-      );
-    },
-  },
-];
 
 function AlertDialogDeleteTable({
   tableDelete,
@@ -174,14 +112,13 @@ function AlertDialogDeleteTable({
     </AlertDialog>
   );
 }
+
 export default function TableTable() {
+  const socket = useAppStore((state) => state.socket);
   const router = useRouter();
   const queryParams = useQueryParams();
 
-  const [searchNumberTable, setSearchNumberTable] = useState<string>(queryParams.number || "");
-  const searchValue = useDebounceInput({ value: searchNumberTable, delay: 1000 });
-
-  const limit = queryParams.limit ? Number(queryParams.limit) : 5;
+  const limit = queryParams.limit ? Number(queryParams.limit) : 10;
   const page = queryParams.page ? Number(queryParams.page) : 1;
 
   const queryConfig: TableQueryType = omitBy(
@@ -193,100 +130,152 @@ export default function TableTable() {
     isUndefined,
   ) as TableQueryType;
 
-  useEffect(() => {
+  const form = useForm<SearchTableType>({
+    resolver: zodResolver(SearchTable),
+    defaultValues: {
+      number: queryParams.number || "",
+    },
+  });
+
+  const reset = () => {
     const params = new URLSearchParams(
-      Object.entries({
-        page: 1, // Reset về trang 1 khi search
-        limit,
-        number: searchValue || undefined,
-      })
-        .filter(([, value]) => value !== undefined)
+      Object.entries({ ...queryConfig, number: undefined })
+        .filter(([key, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    form.reset();
+    router.push(`/manage/tables?${params.toString()}`);
+  };
+
+  const submit = (data: SearchTableType) => {
+    const params = new URLSearchParams(
+      Object.entries({ ...queryConfig, page: 1, number: data.number })
+        .filter(([key, value]) => value !== undefined && value !== "")
         .map(([key, value]) => [key, String(value)]),
     );
     router.push(`/manage/tables?${params.toString()}`);
-  }, [searchValue, limit, router]);
+  };
 
   const [tableIdEdit, setTableIdEdit] = useState<number | undefined>();
   const [tableDelete, setTableDelete] = useState<TableItem | null>(null);
 
   const listTable = useGetListTableQuery(queryConfig);
   const data: TableListResType["data"] = listTable.data?.payload.data || [];
+  const dataSortTypeQR = data.sort((a, b) => b.typeQR.localeCompare(a.typeQR));
+
   const currentPage = listTable.data?.payload.pagination.page || 0; // trang hiện tại
   const totalPages = listTable.data?.payload.pagination.totalPages || 0; // tổng số trang
   const total = listTable.data?.payload.pagination.total || 0; // tổng số item
 
-  const pagination = {
-    pageIndex: queryConfig.page ? queryConfig.page - 1 : 0,
-    pageSize: queryConfig.limit,
+  const openEditTable = (id: number) => {
+    setTableIdEdit(id);
   };
 
-  const table = useReactTable({
-    data,
-    columns,
-    manualPagination: true, // phân trang thủ công
-    manualFiltering: true, // filter thủ công
-    manualSorting: true, // sort thủ công
-    getCoreRowModel: getCoreRowModel(),
-    state: {
-      pagination,
-    },
-  });
+  const openDeleteTable = (table: TableItem) => {
+    setTableDelete(table);
+  };
 
   return (
     <TableTableContext.Provider value={{ tableIdEdit, setTableIdEdit, tableDelete, setTableDelete }}>
       <div className="w-full">
         <EditTable id={tableIdEdit} setId={setTableIdEdit} />
         <AlertDialogDeleteTable tableDelete={tableDelete} setTableDelete={setTableDelete} />
-        <div className="flex items-center py-4">
-          <Input
-            placeholder="Lọc số bàn"
-            value={searchNumberTable}
-            onChange={(event) => {
-              setSearchNumberTable(event.target.value);
-            }}
-            className="max-w-sm"
-          />
+        <div className="flex items-center pb-2">
+          <Form {...form}>
+            <form
+              noValidate
+              className="flex items-center gap-2 py-4"
+              onReset={reset}
+              onSubmit={form.handleSubmit(submit, (err) => {
+                console.log(err);
+              })}
+            >
+              <FormField
+                control={form.control}
+                name="number"
+                render={({ field }) => (
+                  <FormItem>
+                    <Input placeholder="Lọc số bàn" className="max-w-sm" {...field} />
+                  </FormItem>
+                )}
+              />
+
+              <Button variant="outline" size="icon" type="reset">
+                <X />
+              </Button>
+
+              <Button variant="outline" size="icon" className="bg-blue-500!" type="submit">
+                <Search />
+              </Button>
+            </form>
+          </Form>
+
           <div className="ml-auto flex items-center gap-2">
             <AddTable />
           </div>
         </div>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
+        <div>
+          {dataSortTypeQR.length > 0 && (
+            <div className="grid grid-cols-5 gap-4">
+              {data.map((item) => (
+                <div className="col-span-1 border border-gray-700" key={item.number}>
+                  <div className="flex flex-col items-start p-4 space-y-1">
+                    <span className="text-lg font-semibold">
+                      {item.typeQR === OrderModeType.DINE_IN ? `Bàn ${item.number}` : `Bàn mang đi`}
+                    </span>
+                    <QrCodeTable
+                      token={item.token}
+                      tableNumber={item.number}
+                      width={200}
+                      type={item.typeQR}
+                    />
+                    <span className="mt-1 block text-sm">
+                      Sức chứa: <strong className="text-orange-500">{item.capacity}</strong> chỗ
+                    </span>
+                    <div className="mt-1 flex items-center gap-2 text-sm">
+                      <span>Trạng thái:</span>
+                      <Badge variant="outline" className={getTableStatusColor(item.status)}>
+                        {getVietnameseTableStatus(item.status)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span>Loại bàn: </span>
+                      <span
+                        className={`text-sm ${item.typeQR === OrderModeType.DINE_IN ? "text-green-500" : "text-yellow-500"}`}
+                      >
+                        {item.typeQR === OrderModeType.DINE_IN ? "Ăn tại chỗ" : "Mang đi"}
+                      </span>
+                    </div>
+                    <span className="mt-1 block text-sm h-10 line-clamp-2">
+                      Ghi chú: {item.notes ? item.notes : "Không có ghi chú"}
+                    </span>
+                    <span className="mt-1 flex items-center gap-2 text-sm">
+                      <span> Ngày tạo:</span>
+                      <strong className="text-orange-500">
+                        {new Date(item.createdAt).toLocaleDateString("vi-VN")}
+                      </strong>
+                    </span>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => openEditTable(item.number)}
+                        className="bg-blue-500 hover:bg-blue-400 text-white"
+                      >
+                        Sửa
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => openDeleteTable(item)}
+                        className="bg-red-500 hover:bg-red-400 text-white"
+                      >
+                        Xóa
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
           <div className="text-xs text-muted-foreground py-4 flex-1 ">

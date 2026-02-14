@@ -1,22 +1,11 @@
 /* eslint-disable react-hooks/incompatible-library */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,20 +16,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
-import { useDeleteDishMutation, useGetListDishQuery } from "@/queries/useDish";
 import { toast } from "sonner";
 import AddDishCategory from "@/app/manage/categories/add-dish-category";
 import EditDishCategory from "@/app/manage/categories/edit-dish-category";
 import { useDeleteDishCategoryMutation, useGetListDishCategoryQuery } from "@/queries/useDishCategory";
-import { DishCategoryListResType, DishCategoryQueryType } from "@/schemaValidations/dishCategory.schema";
-import { Eye } from "lucide-react";
+import {
+  DishCategoryListResType,
+  DishCategoryQueryType,
+  SearchCategoryDish,
+  SearchCategoryDishType,
+} from "@/schemaValidations/dishCategory.schema";
+import { Eye, Search, X } from "lucide-react";
 import useQueryParams from "@/hooks/useQueryParams";
-import useDebounceInput from "@/hooks/useDebounceInput";
 import { isUndefined, omitBy } from "lodash";
 import Link from "next/link";
 import { handleErrorApi } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormField, FormItem } from "@/components/ui/form";
 
 type DishCategoryItem = DishCategoryListResType["data"][0];
 
@@ -174,9 +169,6 @@ export default function DishCategoryTable() {
   const router = useRouter();
   const queryParams = useQueryParams();
 
-  const [searchName, setSearchName] = useState<string>(queryParams.name || "");
-  const searchValue = useDebounceInput({ value: searchName, delay: 1000 });
-
   const limit = queryParams.limit ? Number(queryParams.limit) : 5;
   const page = queryParams.page ? Number(queryParams.page) : 1;
 
@@ -189,18 +181,31 @@ export default function DishCategoryTable() {
     isUndefined,
   ) as DishCategoryQueryType;
 
-  useEffect(() => {
+  const form = useForm<SearchCategoryDishType>({
+    resolver: zodResolver(SearchCategoryDish),
+    defaultValues: {
+      name: queryParams.name || "",
+    },
+  });
+
+  const reset = () => {
     const params = new URLSearchParams(
-      Object.entries({
-        page: 1, // Reset về trang 1 khi search
-        limit,
-        name: searchValue || undefined,
-      })
-        .filter(([, value]) => value !== undefined)
+      Object.entries({ ...queryConfig, name: undefined })
+        .filter(([key, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    form.reset();
+    router.push(`/manage/categories?${params.toString()}`);
+  };
+
+  const submit = (data: SearchCategoryDishType) => {
+    const params = new URLSearchParams(
+      Object.entries({ ...queryConfig, page: 1, name: data.name })
+        .filter(([key, value]) => value !== undefined && value !== "")
         .map(([key, value]) => [key, String(value)]),
     );
     router.push(`/manage/categories?${params.toString()}`);
-  }, [searchValue, limit, router]);
+  };
 
   const [dishCategoryIdEdit, setDishCategoryIdEdit] = useState<number | undefined>();
   const [dishCategoryDelete, setDishCategoryDelete] = useState<DishCategoryItem | null>(null);
@@ -239,12 +244,35 @@ export default function DishCategoryTable() {
           setDishCategoryDelete={setDishCategoryDelete}
         />
         <div className="flex items-center py-4">
-          <Input
-            placeholder="Lọc tên"
-            value={searchName}
-            onChange={(event) => setSearchName(event.target.value)}
-            className="max-w-sm"
-          />
+          <Form {...form}>
+            <form
+              noValidate
+              className="flex items-center gap-2 py-4"
+              onReset={reset}
+              onSubmit={form.handleSubmit(submit, (err) => {
+                console.log(err);
+              })}
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <Input placeholder="Lọc tên" className="max-w-sm" {...field} />
+                  </FormItem>
+                )}
+              />
+
+              <Button variant="outline" size="icon" type="reset">
+                <X />
+              </Button>
+
+              <Button variant="outline" size="icon" className="bg-blue-500!" type="submit">
+                <Search />
+              </Button>
+            </form>
+          </Form>
+
           <div className="ml-auto flex items-center gap-2">
             <AddDishCategory />
           </div>

@@ -3,10 +3,16 @@ import { LoginRes } from "@/schemaValidations/auth.schema";
 import { BaseQuery, PaginationRes } from "@/schemaValidations/util.schema";
 import z from "zod";
 
+export const SearchAccount = z.object({
+  email: z.string().max(256).optional(),
+});
+
+export type SearchAccountType = z.TypeOf<typeof SearchAccount>;
+
 export const AccountQuery = BaseQuery.and(
   z.object({
     email: z.string().trim().max(256).optional(),
-  })
+  }),
 );
 
 export type AccountQueryType = z.TypeOf<typeof AccountQuery>;
@@ -140,7 +146,7 @@ export const GetListGuestsRes = z.object({
       tableNumber: z.number().nullable(),
       createdAt: z.date(),
       updatedAt: z.date(),
-    })
+    }),
   ),
   message: z.string(),
 });

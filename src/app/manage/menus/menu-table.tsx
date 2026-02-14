@@ -4,24 +4,32 @@
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
-import { DishQueryType } from "@/schemaValidations/dish.schema";
 import useQueryParams from "@/hooks/useQueryParams";
 import { isUndefined, omitBy } from "lodash";
-import useDebounceInput from "@/hooks/useDebounceInput";
 import { Badge } from "@/components/ui/badge";
 import AddMenu from "@/app/manage/menus/add-menu";
 import { useGetListMenuQuery, useUpdateMenuMutation } from "@/queries/useMenu";
-import { MenuListResType, UpdateMenuBodyType } from "@/schemaValidations/menu.schema";
-import { CircleAlert } from "lucide-react";
+import {
+  MenuListResType,
+  MenuQueryType,
+  SearchMenu,
+  SearchMenuType,
+  UpdateMenuBodyType,
+} from "@/schemaValidations/menu.schema";
+import { CircleAlert, Search, X } from "lucide-react";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
 import { handleErrorApi } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAppStore } from "@/components/app-provider";
 import revalidateApiRequests from "@/apiRequests/revalidate";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormField, FormItem } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 
 export type MenuItem = MenuListResType["data"][0];
 
@@ -126,35 +134,43 @@ export default function MenuTable() {
   const queryParams = useQueryParams();
   const socket = useAppStore((state) => state.socket);
 
-  const [searchName, setSearchName] = useState<string>(queryParams.name || "");
-  const searchValue = useDebounceInput({ value: searchName, delay: 1000 });
-
   const limit = queryParams.limit ? Number(queryParams.limit) : 5;
   const page = queryParams.page ? Number(queryParams.page) : 1;
 
-  const queryConfig: DishQueryType = omitBy(
+  const queryConfig: MenuQueryType = omitBy(
     {
       page,
       limit,
       name: queryParams.name ? queryParams.name : undefined,
-      categoryId: queryParams.categoryId || undefined,
     },
     isUndefined,
-  ) as DishQueryType;
+  ) as MenuQueryType;
 
-  useEffect(() => {
+  const form = useForm<SearchMenuType>({
+    resolver: zodResolver(SearchMenu),
+    defaultValues: {
+      name: queryParams.name || "",
+    },
+  });
+
+  const reset = () => {
     const params = new URLSearchParams(
-      Object.entries({
-        page: 1, // Reset về trang 1 khi search
-        limit,
-        categoryId: queryConfig.categoryId,
-        name: searchValue || undefined,
-      })
-        .filter(([, value]) => value !== undefined)
+      Object.entries({ ...queryConfig, name: undefined })
+        .filter(([key, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    form.reset();
+    router.push(`/manage/menus?${params.toString()}`);
+  };
+
+  const submit = (data: SearchMenuType) => {
+    const params = new URLSearchParams(
+      Object.entries({ ...queryConfig, page: 1, name: data.name })
+        .filter(([key, value]) => value !== undefined && value !== "")
         .map(([key, value]) => [key, String(value)]),
     );
     router.push(`/manage/menus?${params.toString()}`);
-  }, [searchValue, limit, queryConfig.categoryId, router]);
+  };
 
   const listMenu = useGetListMenuQuery(queryConfig);
 
@@ -219,12 +235,34 @@ export default function MenuTable() {
         </div>
 
         <div className="flex items-center gap-2 py-4">
-          <Input
-            placeholder="Lọc tên"
-            value={searchName}
-            onChange={(event) => setSearchName(event.target.value)}
-            className="max-w-sm"
-          />
+          <Form {...form}>
+            <form
+              noValidate
+              className="flex items-center gap-2 py-4"
+              onReset={reset}
+              onSubmit={form.handleSubmit(submit, (err) => {
+                console.log(err);
+              })}
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <Input placeholder="Lọc tên" className="max-w-sm" {...field} />
+                  </FormItem>
+                )}
+              />
+
+              <Button variant="outline" size="icon" type="reset">
+                <X />
+              </Button>
+
+              <Button variant="outline" size="icon" className="bg-blue-500!" type="submit">
+                <Search />
+              </Button>
+            </form>
+          </Form>
 
           <div className="ml-auto flex items-center gap-2">
             <AddMenu />

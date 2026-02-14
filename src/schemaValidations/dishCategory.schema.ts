@@ -1,6 +1,12 @@
 import { BaseQuery, PaginationRes } from "@/schemaValidations/util.schema";
 import z from "zod";
 
+export const SearchCategoryDish = z.object({
+  name: z.string().max(256).optional(),
+});
+
+export type SearchCategoryDishType = z.TypeOf<typeof SearchCategoryDish>;
+
 export const DishCategoryQuery = BaseQuery.and(
   z.object({
     name: z.string().trim().max(256).optional(),

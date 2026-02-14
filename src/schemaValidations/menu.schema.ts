@@ -3,6 +3,13 @@ import { DishSchema } from "@/schemaValidations/dish.schema";
 import { BaseQuery, PaginationRes } from "@/schemaValidations/util.schema";
 import z from "zod";
 
+export const SearchMenu = z.object({
+  name: z.string().max(256).optional(),
+  categoryId: z.string().max(256).optional(),
+});
+
+export type SearchMenuType = z.TypeOf<typeof SearchMenu>;
+
 export const MenuQuery = BaseQuery.and(
   z.object({
     name: z.string().trim().max(256).optional(),

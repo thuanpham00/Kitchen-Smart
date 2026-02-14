@@ -168,8 +168,8 @@ export const getVietnameseTableStatus = (status: (typeof TableStatus)[keyof type
   switch (status) {
     case TableStatus.Available:
       return "Có sẵn";
-    case TableStatus.Reserved:
-      return "Đã đặt";
+    case TableStatus.Serving:
+      return "Đang phục vụ";
     default:
       return "Ẩn";
   }

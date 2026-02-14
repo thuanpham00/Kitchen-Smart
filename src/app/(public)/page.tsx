@@ -1,8 +1,41 @@
 import { menuApiRequests } from "@/apiRequests/menu";
-import { formatCurrency, wrapServerApi } from "@/lib/utils";
-import { Award, ChefHat, ChevronRight, Flame, Sparkles, Star, Users } from "lucide-react";
+import PopularDishes from "@/components/popular-dishes";
+import { wrapServerApi } from "@/lib/utils";
+import { Award, ChefHat, Sparkles, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+
+export type DishSuggestList = {
+  id: number;
+  menuId: number;
+  dishId: number;
+  price: number;
+  status: "Available" | "OutOfStock" | "Hidden";
+  dish: {
+    id: number;
+    name: string;
+    price: number;
+    description: string;
+    image: string;
+    status: "Active" | "Discontinued";
+    categoryId: number;
+    category: {
+      id: number;
+      name: string;
+    };
+    dietaryTags: string | null;
+    spicyLevel: number;
+    preparationTime: number;
+    searchKeywords: string;
+    popularity: number;
+    createdAt: Date;
+    updatedAt: Date;
+    ingredients?: string[] | null | undefined;
+  };
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}[];
 
 export default async function Home() {
   const resultSuggested = await wrapServerApi(() => menuApiRequests.getMenuSuggested());
@@ -10,130 +43,67 @@ export default async function Home() {
 
   return (
     <div className="w-full space-y-4">
-      <div className="relative w-full h-100 z-[-1]">
-        <span className="absolute top-0 left-0 w-full h-full bg-black opacity-50 z-10"></span>
-        <Image
-          src="/images/restaurant_banner.png"
-          width={800}
-          height={400}
-          quality={100}
-          alt="Banner"
-          className="absolute top-0 left-0 w-full h-full object-cover"
-        />
-        <div className="z-20 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white">
-          <h1 className="text-center text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold">Kitchen Smart</h1>
-          <p className="text-center text-sm sm:text-base mt-4">Gọi món thông minh - trải nghiệm tinh tế</p>
+      <div className="relative py-16 bg-linear-to-br from-orange-500/10 via-gray-900/90 to-gray-900 z-[-1]">
+        <div className="relative z-5 px-4 sm:px-8 lg:px-16 xl:px-24">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <div className="text-center md:text-left">
+              <p className="text-orange-400 text-base font-semibold mb-4">
+                Chào mừng bạn mới đến với Kitchen Smart!
+              </p>
+              <h1 className="text-white text-4xl sm:text-4xl lg:text-6xl font-extrabold leading-tight mb-5 drop-shadow-lg">
+                Không chỉ là món ăn, mà là trải nghiệm cảm xúc!
+              </h1>
+              <p className="text-white/80 text-lg mb-8 max-w-lg mx-auto md:mx-0">
+                Nấu ăn là nghệ thuật, là niềm vui và là sự kết nối. Hãy khám phá thực đơn đa dạng và không
+                gian ấm cúng của chúng tôi!
+              </p>
+              <Link
+                href="/menu"
+                className="inline-block px-6 py-4 bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-orange-500/40 transition-all duration-300"
+              >
+                Khám phá thực đơn
+              </Link>
+            </div>
+            <div className="relative flex justify-center md:justify-end">
+              <div className="relative z-4 mr-20">
+                <Image
+                  src="/images/image77.png"
+                  width={300}
+                  height={300}
+                  alt="Main dish"
+                  className="w-65 sm:w-[320px] md:w-95 lg:w-105 h-auto object-cover"
+                />
+              </div>
+              <div className="absolute z-5 right-0 top-1/2 -translate-y-1/2 flex flex-col gap-4">
+                <Image
+                  src="/images/image89.png"
+                  alt="Food item"
+                  width={80}
+                  height={80}
+                  className="w-16 h-16 object-cover rounded-xl shadow-lg"
+                />
+                <Image
+                  src="/images/image77.png"
+                  alt="Food item"
+                  width={80}
+                  height={80}
+                  className="w-16 h-16 object-cover rounded-xl shadow-lg"
+                />
+                <Image
+                  src="/images/image91.png"
+                  alt="Food item"
+                  width={80}
+                  height={80}
+                  className="w-16 h-16 object-cover rounded-xl shadow-lg"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Most Popular Food Section */}
-      <section className="py-16 md:py-12 px-4 sm:px-6 lg:px-33.75">
-        <div className="text-center mb-12 md:mb-16">
-          <div className="inline-flex items-center justify-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-full bg-orange-500/20 border-2 border-orange-500/30 flex items-center justify-center">
-              <Flame className="w-6 h-6 text-orange-400" />
-            </div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-linear-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">
-              Món ăn phổ biến
-            </h2>
-            <div className="w-12 h-12 rounded-full bg-orange-500/20 border-2 border-orange-500/30 flex items-center justify-center">
-              <Star className="w-6 h-6 text-orange-400 fill-orange-400" />
-            </div>
-          </div>
-          <p className="text-black dark:text-white text-lg md:text-xl max-w-3xl mx-auto leading-relaxed px-4">
-            Khám phá danh sách các món ăn được yêu thích nhất, bao gồm món chính, đồ uống và tráng miệng, để
-            có trải nghiệm ẩm thực đích thực!
-          </p>
-          <div className="mt-6 h-1 w-32 mx-auto bg-linear-to-r from-transparent via-orange-400 to-transparent rounded-full" />
-        </div>
-
-        {/* Loading State */}
-        {Array.isArray(listDishSuggested) && listDishSuggested.length > 0 ? (
-          <>
-            {/* Dishes Grid */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
-              {listDishSuggested.map((dish, index) => (
-                <div
-                  key={dish.id}
-                  className="group relative backdrop-blur-sm rounded-2xl overflow-hidden shadow-xl border-2 border-gray-200 dark:border-gray-700/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  {/* Glow effect */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-                  {/* Image */}
-                  <div className="relative h-64 md:h-72 overflow-hidden">
-                    <div className="absolute inset-0 z-9" />
-                    <Image
-                      src={dish.dish.image}
-                      alt={dish.dish.name}
-                      width={300}
-                      height={300}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-
-                    {/* Popular Badge */}
-                    <div className="absolute top-4 right-4 z-20">
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/90 backdrop-blur-sm rounded-full border border-orange-400/50 shadow-lg">
-                        <Star className="w-4 h-4 text-white fill-white" />
-                        <span className="text-white font-semibold text-xs">Hot</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="relative p-6">
-                    <h3 className="text-orange-400 dark:text-orange-400 text-xl md:text-2xl font-bold mb-3 line-clamp-1 transition-colors duration-300">
-                      {dish.dish.name}
-                    </h3>
-
-                    <p className="text-black dark:text-gray-400 text-sm md:text-base mb-4 line-clamp-2 leading-relaxed h-12">
-                      {dish.dish.description || "Món ăn đặc biệt với hương vị tuyệt vời"}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold text-black dark:text-white">
-                          {formatCurrency(Number(dish.price))}
-                        </span>
-                      </div>
-
-                      {/* Action Button */}
-                      <Link
-                        href={`/dishes/${dish.id}`}
-                        className="text-gray-600 dark:text-white hover:underline transition-all duration-300 group/btn block"
-                      >
-                        <span>Xem chi tiết</span>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* View All Button */}
-            <div className="text-center">
-              <Link
-                href="/menu"
-                className="inline-flex items-center gap-3 px-8 py-4 bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold text-lg rounded-xl shadow-xl hover:shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 hover:-translate-y-1 border-2 border-orange-400/50"
-              >
-                <Sparkles className="w-5 h-5" />
-                <span>Khám phá tất cả món ăn</span>
-                <ChevronRight className="w-5 h-5" />
-              </Link>
-              <div className="mt-4 h-1 w-48 mx-auto bg-linear-to-r from-transparent via-orange-400 to-transparent rounded-full" />
-            </div>
-          </>
-        ) : (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-800/50 border-2 border-gray-700 mb-6">
-              <Flame className="w-12 h-12 text-gray-500" />
-            </div>
-            <h3 className="text-2xl font-semibold text-gray-400 mb-2">Chưa có món ăn phổ biến</h3>
-            <p className="text-gray-500">Hãy quay lại sau để khám phá những món ăn tuyệt vời!</p>
-          </div>
-        )}
-      </section>
+      <PopularDishes data={listDishSuggested || []} />
 
       {/* Booking & Location Section */}
       <section className="py-8 px-6 sm:px-8 lg:px-33.75">
@@ -154,8 +124,8 @@ export default async function Home() {
             </div>
           </div>
           <div className="bg-orange-400 p-10 rounded-lg">
-            <h3 className="text-gray-900 text-2xl font-medium mb-6 text-center">Giờ mở cửa</h3>
-            <div className="space-y-4 text-gray-900 text-center">
+            <h3 className="text-white text-2xl font-medium mb-6 text-center">Giờ mở cửa</h3>
+            <div className="space-y-4 text-white text-center">
               <div className="flex flex-col items-center">
                 <span className="font-semibold text-lg">Thứ Hai - Chủ Nhật</span>
                 <span className="mt-1 px-4 py-2 rounded-full bg-orange-100 text-orange-700 font-bold text-xl shadow inline-block">
@@ -173,7 +143,7 @@ export default async function Home() {
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-linear-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">
             Ghé thăm nhà hàng của chúng tôi
           </h2>
-          <p className="mt-4 text-black dark:text-white/80 text-lg max-w-2xl mx-auto">
+          <p className="mt-4 text-black dark:text-white/80 text-lg max-w-2xl mx-auto tracking-wide">
             Thực đơn phong cách đồng quê chất lượng, dịch vụ thân thiện và hiệu quả, kết hợp với giá trị thực
             sự đã khiến nhà hàng của chúng tôi phục vụ các gia đình như bạn trong hơn 5 năm.
           </p>

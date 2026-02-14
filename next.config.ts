@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
         hostname: "via.placeholder.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "qr.sepay.vn",
+        pathname: "/**",
+      },
     ],
   },
 };

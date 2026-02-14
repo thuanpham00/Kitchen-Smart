@@ -9,6 +9,7 @@ import {
   Columns3,
   Headset,
   ShoppingBasket,
+  DollarSign,
 } from "lucide-react";
 
 const menuItems = [
@@ -22,6 +23,12 @@ const menuItems = [
     title: "Đơn hàng",
     Icon: ShoppingCart,
     href: "/manage/orders",
+    roles: [Role.Owner, Role.Employee],
+  },
+  {
+    title: "Thanh toán",
+    Icon: DollarSign,
+    href: "/manage/payments",
     roles: [Role.Owner, Role.Employee],
   },
   {

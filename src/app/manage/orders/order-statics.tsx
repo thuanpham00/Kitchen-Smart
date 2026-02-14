@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
 import { Users } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { OrderStatusIcon, cn, getVietnameseOrderStatus } from "@/lib/utils";
@@ -7,8 +7,8 @@ import { OrderModeType, OrderStatus, OrderStatusValues } from "@/constants/type"
 import { TableListResType } from "@/schemaValidations/table.schema";
 import { Badge } from "@/components/ui/badge";
 import { ServingGuestByTableNumber, Statics, StatusCountObject } from "@/app/manage/orders/order-table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import OrderGuestDetail from "@/app/manage/orders/order-guest-detail";
+import Link from "next/link";
+import { useAppStore } from "@/components/app-provider";
 
 // Ví dụ:
 // const statics: Statics = {
@@ -47,45 +47,16 @@ export default function OrderStatics({
   tableList: TableListResType["data"];
   servingGuestByTableNumber: ServingGuestByTableNumber;
 }) {
-  const [selectedTableNumber, setSelectedTableNumber] = useState<number>(0);
-  const selectedServingGuest = servingGuestByTableNumber[selectedTableNumber];
+  const setSelectedTableGuests = useAppStore((state) => state.setSelectedTableGuests);
+
+  const handleTableClick = (tableNumber: number) => {
+    setSelectedTableGuests(servingGuestByTableNumber[tableNumber]);
+  };
+
   return (
     <Fragment>
-      <Dialog
-        open={Boolean(selectedTableNumber)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedTableNumber(0);
-          }
-        }}
-      >
-        <DialogContent className="max-h-full overflow-auto">
-          {selectedServingGuest && (
-            <DialogHeader>
-              <DialogTitle>Khách đang ngồi tại bàn {selectedTableNumber}</DialogTitle>
-            </DialogHeader>
-          )}
-          <div>
-            {selectedServingGuest &&
-              Object.keys(selectedServingGuest).map((guestId, index) => {
-                const orders = selectedServingGuest[Number(guestId)];
-                return (
-                  <div key={guestId}>
-                    <OrderGuestDetail
-                      guest={orders[0].guest}
-                      orders={orders}
-                      setSelectedTableNumber={setSelectedTableNumber}
-                    />
-                    {index !== Object.keys(selectedServingGuest).length - 1 && <Separator className="my-5" />}
-                  </div>
-                );
-              })}
-          </div>
-        </DialogContent>
-      </Dialog>
-      <div className="grid grid-cols-6 gap-4 py-4">
+      <div className="grid grid-cols-5 gap-4 py-4">
         {tableList.map((table) => {
-          console.log(tableList);
           const tableNumber: number = table.number;
           const typeTable = table.typeQR;
           const tableStatics: Record<number, StatusCountObject> | undefined = statics.table[tableNumber];
@@ -118,16 +89,15 @@ export default function OrderStatics({
             }
           }
           return (
-            <div
+            <Link
               key={tableNumber}
               className={cn(`text-sm flex items-stretch gap-2 border p-2 rounded-md`, {
                 "bg-orange-400": !isEmptyTable && typeTable === OrderModeType.DINE_IN,
                 "bg-red-500": !isEmptyTable && typeTable === OrderModeType.TAKE_OUT,
                 "border-transparent": !isEmptyTable,
               })}
-              onClick={() => {
-                if (!isEmptyTable) setSelectedTableNumber(tableNumber);
-              }}
+              href={`/manage/orders/tables/${tableNumber}`}
+              onClick={() => handleTableClick(tableNumber)}
             >
               <div className="flex flex-col items-center justify-center gap-2">
                 <div className="font-semibold text-center text-lg">
@@ -204,7 +174,7 @@ export default function OrderStatics({
                   </TooltipProvider>
                 </div>
               )}
-            </div>
+            </Link>
           );
         })}
       </div>

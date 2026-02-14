@@ -5,31 +5,34 @@ import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { createContext, useEffect, useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { formatCurrency, getVietnameseDishStatus, handleErrorApi } from "@/lib/utils";
+import { createContext, useState } from "react";
+import { formatCurrency, getVietnameseDishStatus } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import AutoPagination from "@/components/auto-pagination";
-import { DishListResType, DishQueryType } from "@/schemaValidations/dish.schema";
+import { DishListResType, DishQueryType, SearchDish, SearchDishType } from "@/schemaValidations/dish.schema";
 import AddDish from "@/app/manage/dishes/add-dish";
-import { useDeleteDishMutation, useGetListDishQuery } from "@/queries/useDish";
-import { toast } from "sonner";
+import { useGetListDishQuery } from "@/queries/useDish";
 import useQueryParams from "@/hooks/useQueryParams";
 import { isUndefined, omitBy } from "lodash";
-import useDebounceInput from "@/hooks/useDebounceInput";
 import { DishStatus } from "@/constants/type";
 import { Badge } from "@/components/ui/badge";
 import SelectCategory from "@/app/manage/dishes/SelectCategory";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Search, X } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { Form, FormField, FormItem } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useGetListDishCategoryNameQuery } from "@/queries/useDishCategory";
 
 type DishItem = DishListResType["data"][0];
 
@@ -139,90 +142,49 @@ export const columns: ColumnDef<DishItem>[] = [
   },
 ];
 
-function AlertDialogDeleteDish({
-  dishDelete,
-  setDishDelete,
-}: {
-  dishDelete: DishItem | null;
-  setDishDelete: (value: DishItem | null) => void;
-}) {
-  const deleteDishMutation = useDeleteDishMutation();
-
-  const handleDelete = async () => {
-    if (dishDelete) {
-      try {
-        const {
-          payload: { message },
-        } = await deleteDishMutation.mutateAsync(dishDelete.id);
-        toast.success(message, {
-          duration: 2000,
-        });
-        setDishDelete(null);
-      } catch (error) {
-        handleErrorApi({ errors: error });
-      }
-    }
-  };
-
-  return (
-    <AlertDialog
-      open={Boolean(dishDelete)}
-      onOpenChange={(value) => {
-        if (!value) {
-          setDishDelete(null);
-        }
-      }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Xóa món ăn?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Món <span className="bg-foreground text-primary-foreground rounded px-1">{dishDelete?.name}</span>{" "}
-            sẽ bị xóa vĩnh viễn
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setDishDelete(null)}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
 export default function DishTable() {
   const router = useRouter();
   const queryParams = useQueryParams();
 
-  const [searchName, setSearchName] = useState<string>(queryParams.name || "");
-  const searchValue = useDebounceInput({ value: searchName, delay: 1000 });
-
-  const limit = queryParams.limit ? Number(queryParams.limit) : 5;
   const page = queryParams.page ? Number(queryParams.page) : 1;
+  const limit = queryParams.limit ? Number(queryParams.limit) : 5;
 
   const queryConfig: DishQueryType = omitBy(
     {
       page,
       limit,
-      name: queryParams.name ? queryParams.name : undefined,
+      name: queryParams.name || undefined,
       categoryId: queryParams.categoryId || undefined,
     },
     isUndefined,
   ) as DishQueryType;
 
-  useEffect(() => {
+  const form = useForm<SearchDishType>({
+    resolver: zodResolver(SearchDish),
+    defaultValues: {
+      name: queryParams.name || "",
+      categoryId: queryParams.categoryId || "",
+    },
+  });
+
+  const reset = () => {
     const params = new URLSearchParams(
-      Object.entries({
-        page: 1, // Reset về trang 1 khi search
-        limit,
-        categoryId: queryConfig.categoryId,
-        name: searchValue || undefined,
-      })
-        .filter(([, value]) => value !== undefined)
+      Object.entries({ ...queryConfig, categoryId: undefined, name: undefined })
+        .filter(([key, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)]),
+    );
+    form.reset();
+    router.push(`/manage/dishes?${params.toString()}`);
+  };
+
+  const submit = (data: SearchDishType) => {
+    const params = new URLSearchParams(
+      Object.entries({ ...queryConfig, page: 1, name: data.name, categoryId: data.categoryId })
+        .filter(([key, value]) => value !== undefined && value !== "")
         .map(([key, value]) => [key, String(value)]),
     );
     router.push(`/manage/dishes?${params.toString()}`);
-  }, [searchValue, limit, queryConfig.categoryId, router]);
+  };
 
   const [dishIdEdit, setDishIdEdit] = useState<number | undefined>();
   const [dishDelete, setDishDelete] = useState<DishItem | null>(null);
@@ -251,17 +213,70 @@ export default function DishTable() {
     },
   });
 
+  const listNameDishCategory = useGetListDishCategoryNameQuery();
+  const dishCategories = listNameDishCategory.data?.payload.data || [];
+
   return (
     <DishTableContext.Provider value={{ dishIdEdit, setDishIdEdit, dishDelete, setDishDelete }}>
       <div className="w-full">
-        <div className="flex items-center gap-2 py-4">
-          <Input
-            placeholder="Lọc tên"
-            value={searchName}
-            onChange={(event) => setSearchName(event.target.value)}
-            className="max-w-sm"
-          />
-          <SelectCategory queryConfig={queryConfig} />
+        <div className="flex items-center justify-between">
+          <Form {...form}>
+            <form
+              noValidate
+              className="flex items-center gap-2 py-4"
+              onReset={reset}
+              onSubmit={form.handleSubmit(submit, (err) => {
+                console.log(err);
+              })}
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <Input placeholder="Lọc tên" className="max-w-sm" {...field} />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                      }}
+                      value={field.value}
+                    >
+                      <SelectTrigger className="w-45">
+                        <SelectValue placeholder="Chọn danh mục" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Danh mục</SelectLabel>
+                          {dishCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.id.toString()}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <Button variant="outline" size="icon" type="reset">
+                <X />
+              </Button>
+
+              <Button variant="outline" size="icon" className="bg-blue-500!" type="submit">
+                <Search />
+              </Button>
+            </form>
+          </Form>
 
           <div className="ml-auto flex items-center gap-2">
             <AddDish />

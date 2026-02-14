@@ -23,10 +23,10 @@ export const DishStatusValues = [DishStatus.Active, DishStatus.Discontinued] as 
 export const TableStatus = {
   Available: "Available",
   Hidden: "Hidden",
-  Reserved: "Reserved",
+  Serving: "Serving",
 } as const;
 
-export const TableStatusValues = [TableStatus.Available, TableStatus.Hidden, TableStatus.Reserved] as const;
+export const TableStatusValues = [TableStatus.Available, TableStatus.Hidden, TableStatus.Serving] as const;
 
 export const OrderStatus = {
   Pending: "Pending",
@@ -43,6 +43,8 @@ export const OrderStatusValues = [
   OrderStatus.Delivered,
   OrderStatus.Paid,
 ] as const;
+
+export type OrderStatusType = keyof typeof OrderStatus;
 
 export const ManagerRoom = "manager" as const;
 
@@ -91,3 +93,8 @@ export const OrderModeType = {
 export const OrderModeTypeValues = ["DINE_IN", "TAKE_OUT"] as const;
 
 export type OrderMode = keyof typeof OrderModeType;
+
+export enum PaymentMethod {
+  CASH, // Tiền mặt
+  SEPAY, // Chuyển khoản sepay
+}

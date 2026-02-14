@@ -119,12 +119,21 @@ export default function OrdersCart() {
       refetch();
     }
 
+    function onPaymentCompleted() {
+      toast.success(`Bạn đã thanh toán thành công`, {
+        duration: 4000,
+      });
+      refetch();
+    }
+
     socket?.on("update-order", onUpdateOrder);
     socket?.on("payment", onPayment);
 
     socket?.on("connect", onConnect);
     socket?.on("disconnect", onDisconnect);
     socket?.on("new-order", onNewOrder);
+    socket?.on("payment-completed", onPaymentCompleted);
+    socket?.on("payment-group-completed", onPaymentCompleted);
 
     return () => {
       socket?.off("connect", onConnect);
@@ -132,6 +141,8 @@ export default function OrdersCart() {
       socket?.off("update-order", onUpdateOrder);
       socket?.off("payment", onPayment);
       socket?.off("new-order", onNewOrder);
+      socket?.off("payment-completed", onPaymentCompleted);
+      socket?.off("payment-group-completed", onPaymentCompleted);
     };
   }, [refetch, socket]);
 

@@ -2,6 +2,12 @@ import { OrderModeTypeValues, TableStatusValues } from "@/constants/type";
 import { BaseQuery, PaginationRes } from "@/schemaValidations/util.schema";
 import z from "zod";
 
+export const SearchTable = z.object({
+  number: z.string().max(256).optional(),
+});
+
+export type SearchTableType = z.TypeOf<typeof SearchTable>;
+
 export const TableQuery = BaseQuery.and(
   z.object({
     number: z.string().trim().max(256).optional(),

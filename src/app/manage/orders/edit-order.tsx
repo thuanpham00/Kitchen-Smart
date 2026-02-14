@@ -103,7 +103,7 @@ export default function EditOrder({
                   <FormItem className="grid grid-cols-4 items-center justify-items-start gap-4">
                     <FormLabel>Món ăn</FormLabel>
                     <div className="flex items-center col-span-2 space-x-4">
-                      <Avatar className="aspect-square w-12.5 h-12.5 rounded-md object-cover">
+                      <Avatar className="aspect-square w-30 h-30 rounded-md border-gray-500 border object-cover">
                         <AvatarImage src={selectedMenuItem?.image || selectedMenuItem?.dish?.image} />
                         <AvatarFallback className="rounded-none">
                           {selectedMenuItem?.name || selectedMenuItem?.dish?.name}

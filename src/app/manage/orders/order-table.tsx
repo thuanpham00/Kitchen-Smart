@@ -25,7 +25,7 @@ import EditOrder from "@/app/manage/orders/edit-order";
 import { createContext, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getVietnameseOrderStatus, handleErrorApi } from "@/lib/utils";
-import { OrderMode, OrderModeType, OrderStatusValues, Role } from "@/constants/type";
+import { OrderMode, OrderModeType, OrderStatusType, OrderStatusValues, Role, TableStatus } from "@/constants/type";
 import OrderStatics from "@/app/manage/orders/order-statics";
 import { useOrderService } from "@/app/manage/orders/order.service";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -41,7 +41,6 @@ import { formatCurrency, formatDateTimeToLocaleString, simpleMatchText } from "@
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { OrderStatus } from "@/constants/type";
-import OrderGuestDetail from "@/app/manage/orders/order-guest-detail";
 import { useGetOrderQuery, useUpdateOrderMutation } from "@/queries/useOrder";
 import { useGetListTableQuery } from "@/queries/useTable";
 import { TableListResType } from "@/schemaValidations/table.schema";
@@ -60,7 +59,6 @@ const OrderTableContext = createContext({
     quantity: number;
     status: (typeof OrderStatusValues)[number];
   }) => {},
-  orderObjectByGuestId: {} as OrderObjectByGuestID,
 });
 
 type OrderItem = GetOrdersResType["data"][0];
@@ -78,7 +76,6 @@ const orderTableColumns: ColumnDef<OrderItem>[] = [
     id: "guestName",
     header: "Khách hàng",
     cell: function Cell({ row }) {
-      const { orderObjectByGuestId } = useContext(OrderTableContext);
       const guest = row.original.guest;
       return (
         <div>
@@ -88,17 +85,10 @@ const orderTableColumns: ColumnDef<OrderItem>[] = [
             </div>
           )}
           {guest && (
-            <Popover>
-              <PopoverTrigger>
-                <div>
-                  <span>{guest.name}</span>
-                  <span className="font-semibold">(#{guest.id})</span>
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-[320px] sm:w-110">
-                <OrderGuestDetail guest={guest} orders={orderObjectByGuestId[guest.id]} />
-              </PopoverContent>
-            </Popover>
+            <div>
+              <span>{guest.name}</span>
+              <span className="font-semibold ml-1">(#{guest.id})</span>
+            </div>
           )}
         </div>
       );
@@ -194,11 +184,13 @@ const orderTableColumns: ColumnDef<OrderItem>[] = [
             <SelectValue placeholder="Theme" />
           </SelectTrigger>
           <SelectContent>
-            {OrderStatusValues.map((status) => (
-              <SelectItem key={status} value={status}>
-                {getVietnameseOrderStatus(status)}
-              </SelectItem>
-            ))}
+            {OrderStatusValues.map((status) => {
+              return (
+                <SelectItem key={status} value={status} disabled={status === OrderStatus.Paid}>
+                  {getVietnameseOrderStatus(status)}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       );
@@ -252,12 +244,16 @@ export type Statics = {
 export type OrderObjectByGuestID = Record<number, GetOrdersResType["data"]>;
 export type ServingGuestByTableNumber = Record<number, OrderObjectByGuestID>;
 
+function checkStatus(status: OrderStatusType) {
+  const arr = [OrderStatus.Pending, OrderStatus.Processing, OrderStatus.Delivered];
+  return arr.includes(status as any);
+}
+
 const PAGE_SIZE = 10;
 const initFromDate = startOfDay(new Date());
 const initToDate = endOfDay(new Date());
 export default function OrderTable() {
   const socket = useAppStore((state) => state.socket);
-  const isRole = useAppStore((state) => state.isRole);
 
   const searchParam = useSearchParams();
   const [openStatusFilter, setOpenStatusFilter] = useState(false);
@@ -282,7 +278,7 @@ export default function OrderTable() {
   });
   const tableList: TableListResType["data"] = tableListQuery.data?.payload.data ?? [];
 
-  const tableListSortedByNumber = tableList.sort((a, b) => a.number - b.number);
+  const tableListSortedByNumber = tableList.filter((table) => table.status !== TableStatus.Hidden).sort((a, b) => a.number - b.number);
 
   // state mặc định của table
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -295,7 +291,7 @@ export default function OrderTable() {
   });
   const [selectedTab, setSelectedTab] = useState<OrderMode>(OrderModeType.DINE_IN);
 
-  const { statics, orderObjectByGuestId, servingGuestByTableNumber } = useOrderService(orderList);
+  const { statics, servingGuestByTableNumber } = useOrderService(orderList);
 
   const updateOrderMutation = useUpdateOrderMutation();
 
@@ -323,10 +319,10 @@ export default function OrderTable() {
 
   const orderListFilteredByTab = orderList.filter((order) => order.orderMode === selectedTab);
   const countOrderDineInByTab = orderList.filter(
-    (order) => order.orderMode === OrderModeType.DINE_IN && order.status !== OrderStatus.Paid,
+    (order) => order.orderMode === OrderModeType.DINE_IN && checkStatus(order.status),
   ).length;
   const countOrderTakeOutByTab = orderList.filter(
-    (order) => order.orderMode === OrderModeType.TAKE_OUT && order.status !== OrderStatus.Paid,
+    (order) => order.orderMode === OrderModeType.TAKE_OUT && checkStatus(order.status),
   ).length;
 
   const table = useReactTable({
@@ -436,7 +432,6 @@ export default function OrderTable() {
         orderIdEdit,
         setOrderIdEdit,
         changeStatus,
-        orderObjectByGuestId,
       }}
     >
       <div className="w-full">

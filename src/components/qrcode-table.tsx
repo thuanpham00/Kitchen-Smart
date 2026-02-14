@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import { getTableLink } from "@/lib/utils";
+import { OrderModeType } from "@/constants/type";
 
 export default function QrCodeTable({
   token,
@@ -29,7 +30,7 @@ export default function QrCodeTable({
     canvasContext.font = "20px Arial";
     canvasContext.fillStyle = "black";
     canvasContext.textAlign = "center";
-    canvasContext.fillText(`Bàn ${tableNumber}`, canvas.width / 2, canvas.width + 20);
+    canvasContext.fillText(type === OrderModeType.DINE_IN  ? `Bàn ${tableNumber}` : "Mang đi", canvas.width / 2, canvas.width + 20);
     canvasContext.fillText(`Quét để gọi món`, canvas.width / 2, canvas.width + 50);
 
     const virtualCanvas = document.createElement("canvas");

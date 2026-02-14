@@ -3,6 +3,13 @@ import { IngredientSchema } from "@/schemaValidations/ingredient.schema";
 import { BaseQuery, PaginationRes } from "@/schemaValidations/util.schema";
 import z from "zod";
 
+export const SearchDish = z.object({
+  name: z.string().max(256).optional(),
+  categoryId: z.string().max(256).optional(),
+});
+
+export type SearchDishType = z.TypeOf<typeof SearchDish>;
+
 export const DishQuery = BaseQuery.and(
   z.object({
     name: z.string().trim().max(256).optional(),

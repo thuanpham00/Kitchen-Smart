@@ -24,13 +24,14 @@ import GuestsDialog from "@/app/manage/orders/guests-dialog";
 import { CreateOrdersBodyType } from "@/schemaValidations/order.schema";
 import Quantity from "@/app/guest/menu/quantity";
 import Image from "next/image";
-import { cn, formatCurrency, handleErrorApi } from "@/lib/utils";
+import { cn, formatCurrency, getVietnameseOrderModeStatus, handleErrorApi } from "@/lib/utils";
 import { useCreateOrderMutation } from "@/queries/useOrder";
 import { useCreateGuestMutation } from "@/queries/useAccount";
 import { toast } from "sonner";
 import { useGetMenuActiveQuery } from "@/queries/useMenu";
 import { MenuActiveResType } from "@/schemaValidations/menu.schema";
-import { MenuItemStatus } from "@/constants/type";
+import { MenuItemStatus, OrderMode, OrderModeType, OrderModeTypeValues } from "@/constants/type";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AddOrder() {
   const createOrderMutation = useCreateOrderMutation();
@@ -102,6 +103,7 @@ export default function AddOrder() {
       } = await createOrderMutation.mutateAsync({
         guestId: guestId!,
         orders,
+        orderMode: orderMode,
       });
       reset();
       setOpen(false);
@@ -121,6 +123,8 @@ export default function AddOrder() {
     setIsNewGuest(true);
     setSelectedGuest(null);
   };
+
+  const [orderMode, setOrderMode] = useState<OrderMode>(OrderModeType.DINE_IN);
 
   return (
     <Dialog
@@ -216,6 +220,27 @@ export default function AddOrder() {
                 </div>
               </div>
             )}
+            <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+              <Label htmlFor="orderMode">Hình thức</Label>
+              <div className="col-span-3 flex items-center justify-start">
+                <Select
+                  onValueChange={(val) => setOrderMode(val as OrderMode)}
+                  defaultValue={orderMode}
+                  value={orderMode}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn loại mã QR" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OrderModeTypeValues.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {getVietnameseOrderModeStatus(status)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
           <div className="w-[60%]">
             <Input
@@ -224,24 +249,23 @@ export default function AddOrder() {
               onChange={(event) => setSearchDish(event.target.value)}
               className="max-w-80 mb-4"
             />
-            <div className="h-100 overflow-auto grid grid-cols-2 gap-4">
+            <div className="h-100 overflow-auto grid grid-cols-3 gap-4">
               {menuItemsFiltered
                 .filter((item) => item.status !== MenuItemStatus.HIDDEN)
-                .map((item, index) => (
-                  <div key={item.id} className={cn("flex gap-4")}>
-                    <div className="shrink-0 relative">
+                .map((item) => (
+                  <div key={item.id} className={cn("flex flex-col gap-4")}>
+                    <div className="shrink-0 relative w-full h-50">
                       <Image
                         src={item.dish.image}
                         alt={item.dish.name}
                         height={100}
                         width={100}
-                        quality={100}
                         unoptimized
-                        className="object-cover w-24 h-24 rounded-md"
+                        className="object-cover w-full h-full rounded-md"
                       />
                       {item.status === MenuItemStatus.OUT_OF_STOCK && (
                         <div>
-                          <div className="absolute inset-0 z-40 bg-gray-200 opacity-25 rounded-md"></div>
+                          <div className="absolute inset-0 z-40 w-full h-50 bg-gray-200 opacity-25 rounded-md"></div>
                           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-md w-full">
                             <span className="p-1 rounded-lg font-semibold text-sm bg-white text-black w-full block text-center">
                               Hết hàng
@@ -251,10 +275,7 @@ export default function AddOrder() {
                       )}
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-[15px] font-semibold">
-                        {index + 1}/{item.dish.name}
-                      </h3>
-                      <p className="text-xs">{item.dish.description}</p>
+                      <h3 className="text-[15px] font-semibold">{item.dish.name}</h3>
                       <p className="text-sm font-semibold">{formatCurrency(item.price)}</p>
                     </div>
                     <div className="shrink-0 ml-auto flex justify-center items-center">

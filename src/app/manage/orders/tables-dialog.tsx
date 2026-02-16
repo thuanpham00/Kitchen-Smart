@@ -145,7 +145,7 @@ export function TablesDialog({ onChoose }: { onChoose: (table: TableItem) => voi
                         onClick={() => {
                           if (
                             row.original.status === TableStatus.Available ||
-                            row.original.status === TableStatus.Reserved
+                            row.original.status === TableStatus.Serving
                           ) {
                             choose(row.original);
                           }
@@ -153,7 +153,7 @@ export function TablesDialog({ onChoose }: { onChoose: (table: TableItem) => voi
                         className={cn({
                           "cursor-pointer":
                             row.original.status === TableStatus.Available ||
-                            row.original.status === TableStatus.Reserved,
+                            row.original.status === TableStatus.Serving,
                           "cursor-not-allowed": row.original.status === TableStatus.Hidden,
                         })}
                       >

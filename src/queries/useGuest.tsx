@@ -1,6 +1,6 @@
 import guestApiRequest from "@/apiRequests/guest";
 import { GuestCreateOrdersBodyType, GuestLoginBodyType } from "@/schemaValidations/guest.schema";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useGuestLoginMutation = () => {
   return useMutation({
@@ -24,8 +24,6 @@ export const useGuestOrderQuery = () => {
     queryFn: () => {
       return guestApiRequest.getOrderList();
     },
-    placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 

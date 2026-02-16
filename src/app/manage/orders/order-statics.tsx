@@ -3,9 +3,8 @@ import { Users } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { OrderStatusIcon, cn, getVietnameseOrderStatus } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { OrderModeType, OrderStatus, OrderStatusValues } from "@/constants/type";
+import { OrderModeType, OrderStatus, TableStatus } from "@/constants/type";
 import { TableListResType } from "@/schemaValidations/table.schema";
-import { Badge } from "@/components/ui/badge";
 import { ServingGuestByTableNumber, Statics, StatusCountObject } from "@/app/manage/orders/order-table";
 import Link from "next/link";
 import { useAppStore } from "@/components/app-provider";
@@ -58,6 +57,7 @@ export default function OrderStatics({
       <div className="grid grid-cols-5 gap-4 py-4">
         {tableList.map((table) => {
           const tableNumber: number = table.number;
+          const statusTable = table.status;
           const typeTable = table.typeQR;
           const tableStatics: Record<number, StatusCountObject> | undefined = statics.table[tableNumber];
           let isEmptyTable = true;
@@ -129,7 +129,10 @@ export default function OrderStatics({
                 })}
               />
 
-              {isEmptyTable && <div className="flex justify-between items-center text-sm">Ready</div>}
+              {statusTable === TableStatus.Hidden && (
+                <div className="flex justify-between items-center text-sm">Ẩn</div>
+              )}
+              {isEmptyTable && statusTable !== TableStatus.Hidden && <div className="flex justify-between items-center text-sm">Trống</div>}
               {!isEmptyTable && (
                 <div className="flex flex-col gap-2">
                   <TooltipProvider>
@@ -177,13 +180,6 @@ export default function OrderStatics({
             </Link>
           );
         })}
-      </div>
-      <div className="flex justify-start items-end gap-4 flex-wrap py-4">
-        {OrderStatusValues.map((status) => (
-          <Badge variant="secondary" key={status}>
-            {getVietnameseOrderStatus(status)}: {statics.status[status] ?? 0}
-          </Badge>
-        ))}
       </div>
     </Fragment>
   );

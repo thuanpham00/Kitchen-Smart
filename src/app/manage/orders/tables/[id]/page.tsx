@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useAppStore } from "@/components/app-provider";
 import OrderGuestSummary from "@/app/manage/orders/order-guest-summary";
@@ -29,9 +28,17 @@ export default function AllOrderByTablePage() {
 
   const selectedTableGuests = useAppStore((state) => state.selectedTableGuests);
   const guestIds = selectedTableGuests ? Object.keys(selectedTableGuests).map((id) => Number(id)) : [];
-  console.log("selectedTableGuests", guestIds);
 
   const payOrderTableMutation = usePayOrderByTableMutation();
+
+  useEffect(() => {
+    if (selectedTableGuests === null || selectedTableGuests === undefined) {
+      toast.error("Không có dữ liệu cho bàn này. Đang chuyển về trang quản lý orders...", {
+        duration: 3000,
+      });
+      router.push("/manage/orders");
+    }
+  }, [selectedTableGuests, router]);
 
   const [showModalSelectPaymentMethod, setShowModalSelectPaymentMethod] = useState(false);
   const [showModalSeePay, setShowModalSeePay] = useState(false);
@@ -88,6 +95,7 @@ export default function AllOrderByTablePage() {
       });
 
       if (paymentMethod === "SEPAY") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setPaymentExists(data as any);
         setShowModalSelectPaymentMethod(false);
         setShowModalSeePay(true);
@@ -279,6 +287,7 @@ export default function AllOrderByTablePage() {
     };
   }, [socket, queryClient]);
 
+  // Early return nếu không có dữ liệu
   if (!selectedTableGuests || Object.keys(selectedTableGuests).length === 0) {
     return (
       <div className="container mx-auto p-4">

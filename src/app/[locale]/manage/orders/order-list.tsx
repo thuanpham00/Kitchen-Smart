@@ -48,6 +48,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Statics } from "@/app/[locale]/manage/orders/order-table-session";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
 
 const OrderTableContext = createContext({
   orderIdEdit: undefined as number | undefined,
@@ -197,6 +198,7 @@ const getColumns = (t: any) => {
       header: t("statusHeader"),
       cell: function Cell({ row }) {
         const { changeStatus } = useContext(OrderTableContext);
+        const queryClient = useQueryClient();
         const changeOrderStatus = async (status: (typeof OrderStatusValues)[number]) => {
           changeStatus({
             orderId: row.original.id,
@@ -210,6 +212,9 @@ const getColumns = (t: any) => {
           <Select
             onValueChange={(value: (typeof OrderStatusValues)[number]) => {
               changeOrderStatus(value);
+              if (value === OrderStatus.Processing) {
+                queryClient.invalidateQueries({ queryKey: ["export-receipts"] });
+              }
             }}
             defaultValue={OrderStatus.Pending}
             value={row.getValue("status")}

@@ -40,6 +40,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem } from "@/components/ui/form";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
 
 type IngredientItem = IngredientListResType["data"][0];
 
@@ -108,6 +109,11 @@ export const getColumns = (t: any) => {
       cell: ({ row }) => <div>{row.getValue("allergenType") || "—"}</div>,
     },
     {
+      accessorKey: "unit",
+      header: t("unit"),
+      cell: ({ row }) => <div>{row.getValue("unit") || "—"}</div>,
+    },
+    {
       accessorKey: "isVegetarian",
       header: t("isVegetarian"),
       cell: ({ row }) =>
@@ -139,7 +145,7 @@ export const getColumns = (t: any) => {
     },
     {
       accessorKey: "description",
-      header: t("description"),
+      header: t("description2"),
       cell: ({ row }) => (
         <div className="whitespace-pre-line max-w-60 text-xs text-muted-foreground">
           {row.getValue("description") || "—"}
@@ -198,6 +204,7 @@ function AlertDialogDeleteIngredient({
   ingredientDelete: IngredientItem | null;
   setIngredientDelete: (value: IngredientItem | null) => void;
 }) {
+  const queryClient = useQueryClient();
   const t = useTranslations("ManageIngredients");
   const deleteIngredientMutation = useDeleteIngredientMutation();
 
@@ -211,6 +218,7 @@ function AlertDialogDeleteIngredient({
           duration: 2000,
         });
         setIngredientDelete(null);
+        queryClient.invalidateQueries({ queryKey: ["inventory-stocks"] });
       } catch (error) {
         handleErrorApi({ errors: error });
       }
@@ -260,6 +268,7 @@ export default function IngredientTable() {
       limit,
       name: queryParams.name || undefined,
       category: queryParams.category || undefined,
+      unit: queryParams.unit || undefined,
     },
     isUndefined,
   ) as IngredientQueryType;
@@ -269,12 +278,13 @@ export default function IngredientTable() {
     defaultValues: {
       name: queryParams.name || "",
       category: queryParams.category || "",
+      unit: queryParams.unit || "",
     },
   });
 
   const reset = () => {
     const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, category: undefined, name: undefined })
+      Object.entries({ ...queryConfig, category: undefined, name: undefined, unit: undefined })
         .filter(([key, value]) => value !== undefined)
         .map(([key, value]) => [key, String(value)]),
     );
@@ -284,7 +294,7 @@ export default function IngredientTable() {
 
   const submit = (data: SearchIngredientType) => {
     const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, name: data.name, category: data.category })
+      Object.entries({ ...queryConfig, page: 1, name: data.name, category: data.category, unit: data.unit })
         .filter(([key, value]) => value !== undefined && value !== "")
         .map(([key, value]) => [key, String(value)]),
     );
@@ -379,6 +389,30 @@ export default function IngredientTable() {
                         <SelectItem value="thit-ca">{t("categoryMeat")}</SelectItem>
                         <SelectItem value="gia-vi">{t("categorySpice")}</SelectItem>
                         <SelectItem value="khac">{t("categoryOther")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                      }}
+                      value={field.value}
+                    >
+                      <SelectTrigger className="w-52">
+                        <SelectValue placeholder={t("filterUnit")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="kg">{t("unit_kg")}</SelectItem>
+                        <SelectItem value="liter">{t("unit_liter")}</SelectItem>
+                        <SelectItem value="piece">{t("unit_piece")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>

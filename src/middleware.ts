@@ -64,7 +64,8 @@ export function middleware(request: NextRequest) {
       const url = new URL(`/${locale}/refresh-token`, request.url);
       // xử lý case AT tại cookie bị xóa redirect sang /refresh-token để lấy AT mới
       url.searchParams.set("refreshToken", refreshToken ?? "");
-      url.searchParams.set("redirect", pathname);
+      const pathNameReplace = pathname.replace(`/${locale}`, "");
+      url.searchParams.set("redirect", pathNameReplace);
       return NextResponse.redirect(url);
       // response.headers.set("x-middleware-rewrite", url.toString());
       // return response;

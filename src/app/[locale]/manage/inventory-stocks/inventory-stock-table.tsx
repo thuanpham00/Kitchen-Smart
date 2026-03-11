@@ -7,32 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createContext, useContext, useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import AutoPagination from "@/components/auto-pagination";
-import { toast } from "sonner";
-import AddDishCategory from "@/app/[locale]/manage/categories/add-dish-category";
-import EditDishCategory from "@/app/[locale]/manage/categories/edit-dish-category";
-import { useDeleteDishCategoryMutation, useGetListDishCategoryQuery } from "@/queries/useDishCategory";
-import {
-  DishCategoryListResType,
-  DishCategoryQueryType,
-  SearchCategoryDish,
-  SearchCategoryDishType,
-} from "@/schemaValidations/dishCategory.schema";
-import { Eye, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import useQueryParams from "@/hooks/useQueryParams";
 import { isUndefined, omitBy } from "lodash";
-import { Link, useRouter } from "@/i18n/routing";
-import { handleErrorApi } from "@/lib/utils";
+import { useRouter } from "@/i18n/routing";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem } from "@/components/ui/form";
@@ -43,22 +22,31 @@ import {
   SearchInventoryStock,
   SearchInventoryStockType,
 } from "@/schemaValidations/inventory-stock.schema";
-import { useDeleteInventoryStockMutation, useGetListInventoryStockQuery } from "@/queries/useInventoryStock";
+import {
+  useGetListInventoryStockNoPaginationQuery,
+  useGetListInventoryStockQuery,
+} from "@/queries/useInventoryStock";
 import Image from "next/image";
+import WarningStocksDialog from "@/app/[locale]/manage/inventory-stocks/warning-stocks-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import EditInventoryStock from "@/app/[locale]/manage/inventory-stocks/edit-inventory-stock";
+import InventoryBatchesDialog from "@/app/[locale]/manage/inventory-stocks/inventory-batches-dialog";
+import { toast } from "sonner";
 
 type InventoryStockItem = InventoryStockListResType["data"][0];
 
 // sử dụng trong phạm vị component AccountTable và các component con của nó
-const InventoryStockTableContext = createContext<{
+export const InventoryStockTableContext = createContext<{
   inventoryStockIdEdit: number | undefined;
-  setInventoryStockIdEdit: (value: number) => void;
-  inventoryStockDelete: InventoryStockItem | null;
-  setInventoryStockDelete: (value: InventoryStockItem | null) => void;
+  setInventoryStockIdEdit: (value: number | undefined) => void;
+  showModal: number | null;
+  setShowModal: (value: number | null) => void;
 }>({
   inventoryStockIdEdit: undefined,
   setInventoryStockIdEdit: (value: number | undefined) => {},
-  inventoryStockDelete: null,
-  setInventoryStockDelete: (value: InventoryStockItem | null) => {},
+  showModal: null,
+  setShowModal: (value: number | null) => {},
 });
 
 export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
@@ -109,6 +97,12 @@ export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
 
       return <div className={`text-right ${colorClass}`}>{quantity}</div>;
     },
+  },
+  {
+    accessorKey: "unitIngredient",
+    header: () => <div className="text-right">{t("unitIngredient")}</div>,
+    size: 120,
+    cell: ({ row }) => <div className="text-right">{row.original.ingredientUnit}</div>,
   },
   {
     id: "stockStatus",
@@ -210,16 +204,14 @@ export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
     header: () => <div className="text-right">{t("actions")}</div>,
     size: 150,
     cell: function Actions({ row }) {
-      const { setInventoryStockIdEdit, setInventoryStockDelete } = useContext(InventoryStockTableContext);
+      const { setInventoryStockIdEdit, setShowModal } = useContext(InventoryStockTableContext);
       const openEditInventoryStock = () => {
         setInventoryStockIdEdit(row.original.id);
+        setShowModal(1);
       };
 
-      const openDeleteInventoryStock = () => {
-        setInventoryStockDelete(row.original);
-      };
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end">
           <Button
             size="sm"
             onClick={openEditInventoryStock}
@@ -227,12 +219,34 @@ export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
           >
             {t("edit")}
           </Button>
+        </div>
+      );
+    },
+  },
+
+  {
+    id: "batches",
+    header: () => <div className="text-right">{t("batches")}</div>,
+    size: 150,
+    cell: function Actions({ row }) {
+      const { setInventoryStockIdEdit, setShowModal } = useContext(InventoryStockTableContext);
+      const openEditInventoryStock = () => {
+        if (row.original.batchCount as number <= 0) {
+          toast.error(t("noBatches"));
+          return;
+        }
+        setInventoryStockIdEdit(row.original.id);
+        setShowModal(2);
+      };
+
+      return (
+        <div className="flex items-center justify-end">
           <Button
             size="sm"
-            onClick={openDeleteInventoryStock}
+            onClick={openEditInventoryStock}
             className="bg-red-500 hover:bg-red-400 text-white"
           >
-            {t("delete")}
+            {t("seeBatches")} {row.original.batchCount ? `(${row.original.batchCount})` : "(0)"}
           </Button>
         </div>
       );
@@ -240,65 +254,13 @@ export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
   },
 ];
 
-function AlertDialogDeleteInventoryStock({
-  inventoryStockDelete,
-  setInventoryStockDelete,
-}: {
-  inventoryStockDelete: InventoryStockItem | null;
-  setInventoryStockDelete: (value: InventoryStockItem | null) => void;
-}) {
-  const t = useTranslations("ManageInventoryStocks");
-  const deleteInventoryStockMutation = useDeleteInventoryStockMutation();
-
-  const handleDelete = async () => {
-    if (inventoryStockDelete) {
-      try {
-        const {
-          payload: { message },
-        } = await deleteInventoryStockMutation.mutateAsync(inventoryStockDelete.id);
-        toast.success(message, {
-          duration: 2000,
-        });
-        setInventoryStockDelete(null);
-      } catch (error) {
-        handleErrorApi({
-          errors: error,
-        });
-      }
-    }
-  };
-
-  return (
-    <AlertDialog
-      open={Boolean(inventoryStockDelete)}
-      onOpenChange={(value) => {
-        if (!value) {
-          setInventoryStockDelete(null);
-        }
-      }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("deleteInventoryStockTitle")}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t("deleteInventoryStockDesc", { name: inventoryStockDelete?.ingredientName || "N/A" })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setInventoryStockDelete(null)}>{t("cancel")}</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete}>{t("continue")}</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
 export default function InventoryStockTable() {
   const t = useTranslations("ManageInventoryStocks");
   const columns = getColumns(t);
   const router = useRouter();
   const queryParams = useQueryParams();
 
-  const limit = queryParams.limit ? Number(queryParams.limit) : 5;
+  const limit = queryParams.limit ? Number(queryParams.limit) : 10;
   const page = queryParams.page ? Number(queryParams.page) : 1;
 
   const queryConfig: InventoryStockQueryType = omitBy(
@@ -315,22 +277,31 @@ export default function InventoryStockTable() {
     resolver: zodResolver(SearchInventoryStock),
     defaultValues: {
       ingredientName: queryParams.ingredientName || "",
+      lowStock: queryParams.lowStock === "true" ? true : queryParams.lowStock === "false" ? false : undefined,
     },
   });
 
   const reset = () => {
     const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, ingredientName: undefined })
+      Object.entries({ ...queryConfig, ingredientName: undefined, lowStock: undefined })
         .filter(([key, value]) => value !== undefined)
         .map(([key, value]) => [key, String(value)]),
     );
-    form.reset();
+    form.reset({
+      ingredientName: "",
+      lowStock: undefined,
+    });
     router.push(`/manage/inventory-stocks?${params.toString()}`);
   };
 
   const submit = (data: SearchInventoryStockType) => {
     const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, ingredientName: data.ingredientName })
+      Object.entries({
+        ...queryConfig,
+        page: 1,
+        ingredientName: data.ingredientName,
+        lowStock: data.lowStock,
+      })
         .filter(([key, value]) => value !== undefined && value !== "")
         .map(([key, value]) => [key, String(value)]),
     );
@@ -338,9 +309,10 @@ export default function InventoryStockTable() {
   };
 
   const [inventoryStockIdEdit, setInventoryStockIdEdit] = useState<number | undefined>();
-  const [inventoryStockDelete, setInventoryStockDelete] = useState<InventoryStockItem | null>(null);
 
   const listInventoryStock = useGetListInventoryStockQuery(queryConfig);
+  const listInventoryStockNoPagination = useGetListInventoryStockNoPaginationQuery();
+
   const data: InventoryStockListResType["data"] = listInventoryStock.data?.payload.data || [];
   const currentPage = listInventoryStock.data?.payload.pagination.page || 0; // trang hiện tại
   const totalPages = listInventoryStock.data?.payload.pagination.totalPages || 0; // tổng số trang
@@ -363,17 +335,18 @@ export default function InventoryStockTable() {
     },
   });
 
+  const [showModal, setShowModal] = useState<number | null>(null);
+
   return (
     <InventoryStockTableContext.Provider
-      value={{ inventoryStockIdEdit, setInventoryStockIdEdit, inventoryStockDelete, setInventoryStockDelete }}
+      value={{ inventoryStockIdEdit, setInventoryStockIdEdit, showModal, setShowModal }}
     >
       <div className="w-full">
-        {/* <EditInventoryStock id={inventoryStockIdEdit} setId={setInventoryStockIdEdit} />
-        <AlertDialogDeleteInventoryStock
-          dishCategoryDelete={dishCategoryDelete}
-          setDishCategoryDelete={setDishCategoryDelete}
-        /> */}
-        <div className="flex items-center py-4">
+        <EditInventoryStock showModal={showModal} setShowModal={setShowModal} />
+        <WarningStocksDialog data={listInventoryStockNoPagination.data?.payload.data || []} />
+        <InventoryBatchesDialog showModal={showModal} setShowModal={setShowModal} />
+
+        <div className="flex items-center pb-4 pt-2">
           <Form {...form}>
             <form
               noValidate
@@ -393,6 +366,26 @@ export default function InventoryStockTable() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="lowStock"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="airplane-mode">{t("lowStock")}</Label>
+                      <Switch
+                        id="airplane-mode"
+                        checked={field.value === true}
+                        onCheckedChange={(val) => {
+                          field.onChange(val);
+                          console.log(val);
+                        }}
+                      />
+                    </div>
+                  </FormItem>
+                )}
+              />
+
               <Button variant="outline" size="icon" type="reset">
                 <X />
               </Button>
@@ -402,10 +395,6 @@ export default function InventoryStockTable() {
               </Button>
             </form>
           </Form>
-
-          <div className="ml-auto flex items-center gap-2">
-            <AddDishCategory />
-          </div>
         </div>
         <div className="rounded-md border">
           <Table>
@@ -454,7 +443,7 @@ export default function InventoryStockTable() {
               queryConfig={queryConfig}
               page={currentPage} // trang hiện tại
               totalPages={totalPages} // tổng số trang
-              pathname="/manage/categories"
+              pathname="/manage/inventory-stocks"
             />
           </div>
         </div>

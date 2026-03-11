@@ -106,7 +106,7 @@ const getColumns = (t: any) => {
     {
       id: "unit",
       header: t("unit"),
-      cell: ({ row }) => <div className="">{row.original.unit}</div>,
+      cell: ({ row }) => <div className="">{row.original.ingredient.unit}</div>,
     },
     {
       id: "isMain",
@@ -136,7 +136,9 @@ const getColumns = (t: any) => {
       cell: ({ row }) => (
         <div>
           {row.original.ingredient.isActive ? (
-            <Badge variant="secondary" className="bg-green-500!">{t("inStock")}</Badge>
+            <Badge variant="secondary" className="bg-green-500!">
+              {t("inStock")}
+            </Badge>
           ) : (
             <Badge variant="destructive">{t("outOfStock")}</Badge>
           )}

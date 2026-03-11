@@ -1,5 +1,5 @@
 import {
-  CreateInventoryStockBodyType,
+  InventoryStockListNoPaginationResType,
   InventoryStockListResType,
   InventoryStockQueryType,
   InventoryStockResType,
@@ -8,20 +8,17 @@ import {
 import http from "@/utils/http";
 import queryString from "query-string";
 
-export const inventoryApiRequests = {
+export const inventoryStockApiRequests = {
   list: (params: InventoryStockQueryType) => {
     return http.get<InventoryStockListResType>("/inventory-stocks?" + queryString.stringify(params));
   },
-  addIngredient: (body: CreateInventoryStockBodyType) => {
-    return http.post<InventoryStockResType>("/inventory-stocks", body);
+  listNoPagination: () => {
+    return http.get<InventoryStockListNoPaginationResType>("/inventory-stocks/all");
   },
-  updateIngredient: (id: number, body: UpdateInventoryStockBodyType) => {
+  updateInventoryStock: (id: number, body: UpdateInventoryStockBodyType) => {
     return http.put<InventoryStockResType>(`/inventory-stocks/${id}`, body);
   },
-  deleteIngredient: (id: number) => {
-    return http.delete<InventoryStockResType>(`/inventory-stocks/${id}`);
-  },
-  getIngredientById: (id: number) => {
+  getInventoryStockById: (id: number) => {
     return http.get<InventoryStockResType>(`/inventory-stocks/${id}`);
   },
 };

@@ -361,7 +361,7 @@ export default function OrderGuestSummary({ guest, orders }: { guest: Guest; ord
                               ? "bg-green-100 text-green-800 border-green-300"
                               : order.status === OrderStatus.Paid
                                 ? "bg-gray-100 text-gray-800 border-gray-300"
-                                : "bg-red-100 text-red-800 border-red-300"
+                                : "bg-red-100 text-white border-red-300"
                       }`}
                     >
                       {t(order.status)}

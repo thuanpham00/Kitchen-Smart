@@ -12,6 +12,7 @@ export const SupplierQuery = BaseQuery.and(
   z.object({
     name: z.string().trim().max(256).optional(),
     status: z.enum(["Active", "Inactive"]).optional(),
+    pagination: z.string().optional(),
   }),
 );
 

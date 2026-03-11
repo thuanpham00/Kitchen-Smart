@@ -4,6 +4,7 @@ import z from "zod";
 export const SearchIngredient = z.object({
   name: z.string().max(256).optional(),
   category: z.string().max(256).optional(),
+  unit: z.string().max(256).optional(),
 });
 
 export type SearchIngredientType = z.TypeOf<typeof SearchIngredient>;
@@ -12,6 +13,7 @@ export const IngredientQuery = BaseQuery.and(
   z.object({
     name: z.string().trim().max(256).optional(),
     category: z.string().optional(),
+    unit: z.string().optional(),
     pagination: z.string().optional(),
   }),
 );
@@ -21,6 +23,7 @@ export type IngredientQueryType = z.TypeOf<typeof IngredientQuery>;
 export const CreateIngredientBody = z.object({
   name: z.string().min(1, { message: "nameRequired" }).max(256, { message: "nameTooLong" }),
   description: z.string().max(10000, { message: "descriptionTooLong" }).optional(),
+  unit: z.string().min(1, { message: "unitRequired" }).max(100, { message: "unitTooLong" }),
   allergenType: z.string().optional(),
   isVegetarian: z.boolean().optional(),
   isVegan: z.boolean().optional(),
@@ -44,6 +47,7 @@ export const IngredientSchema = z.object({
   category: z.string().nullable(),
   image: z.string(),
   isActive: z.boolean(),
+  unit: z.string(),
   countDishUsed: z.number().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),

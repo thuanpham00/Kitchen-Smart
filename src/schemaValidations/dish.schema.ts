@@ -137,8 +137,7 @@ export type DishIngredientListResType = z.TypeOf<typeof DishIngredientListRes>;
 export const AddIngredientToDish = z.object({
   dishId: z.number(),
   ingredientId: z.number().min(1, { message: "ingredientRequired" }),
-  quantity: z.number().min(1, { message: "quantityMin" }),
-  unit: z.string().min(1, { message: "unitRequired" }),
+  quantity: z.number().min(0, { message: "quantityMin" }),
   isOptional: z.boolean().optional(),
   isMain: z.boolean().optional(),
 });

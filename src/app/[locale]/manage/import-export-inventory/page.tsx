@@ -33,13 +33,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function ImportExportInventoryPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale;
   setRequestLocale(locale); // set ngôn ngữ cho trang này, nếu ko set thì sẽ lấy ngôn ngữ mặc định là en, dù cho url có là /vi đi nữa
-  const t = await getTranslations("ManageImportExportInventory");
 
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="space-y-2">
-        <h1 className="text-xl">{t("title")}</h1>
-        <h2>{t("description")}</h2>
         <Suspense>
           {/* ngăn lỗi useSearchParams nên dùng Suspense */}
           <ImportExportInventory />

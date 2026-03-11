@@ -144,7 +144,7 @@ const request = async <Response>(
         const accessToken = (options?.headers as any)?.Authorization.split("Bearer ")[1];
         const locale = Cookies.get("NEXT_LOCALE");
         redirect({
-          href: `/login?accessToken=${accessToken}`,
+          href: `/logout?accessToken=${accessToken}`,
           locale: locale ?? defaultLocale,
         });
       }

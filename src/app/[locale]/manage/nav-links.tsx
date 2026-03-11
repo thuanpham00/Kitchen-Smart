@@ -37,7 +37,11 @@ export default function NavLinks() {
           <div className="h-130 flex flex-col justify-between overflow-auto">
             {menuItems.map((Item, index) => {
               if (!Item.roles.includes(isRole as "Owner" | "Employee")) return null;
-              const isActive = pathname.includes(Item.href);
+              
+              // Tách path khỏi query string để so sánh
+              const itemPath = Item.href.split('?')[0];
+              const isActive = pathname === itemPath || pathname.startsWith(itemPath + '/');
+              
               const isCallGuest = Item.href === "/manage/call-waiters";
               const isOrderToday = Item.href === "/manage/orders";
               return (

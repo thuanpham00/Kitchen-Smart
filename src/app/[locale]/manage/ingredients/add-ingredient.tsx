@@ -27,8 +27,10 @@ import { useUploadMutation } from "@/queries/useMedia";
 import { useAddIngredientMutation } from "@/queries/useIngredient";
 import { Switch } from "@/components/ui/switch";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AddIngredient() {
+  const queryClient = useQueryClient();
   const t = useTranslations("ManageIngredients");
   const uploadMutation = useUploadMutation();
   const addIngredientMutation = useAddIngredientMutation();
@@ -46,6 +48,7 @@ export default function AddIngredient() {
       category: "",
       image: undefined,
       isActive: true,
+      unit: "",
     },
   });
   const image = form.watch("image");
@@ -88,6 +91,7 @@ export default function AddIngredient() {
       const {
         payload: { message },
       } = await addIngredientMutation.mutateAsync(body);
+      queryClient.invalidateQueries({ queryKey: ["inventory-stocks"] });
 
       toast.success(message, {
         duration: 2000,
@@ -118,7 +122,7 @@ export default function AddIngredient() {
           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">{t("createIngredient")}</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-150 max-h-screen overflow-auto">
+      <DialogContent className="sm:max-w-150 max-h-[calc(100vh-100px)] overflow-auto">
         <DialogHeader>
           <DialogTitle>{t("createIngredient")}</DialogTitle>
         </DialogHeader>
@@ -206,6 +210,33 @@ export default function AddIngredient() {
                         </Select>
                         <FormMessage>
                           {Boolean(errors.category?.message) && t(errors.category?.message as any)}
+                        </FormMessage>
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field, formState: { errors } }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                      <Label htmlFor="unit">{t("unit")}</Label>
+                      <div className="col-span-3 w-full space-y-2">
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("chooseUnit")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="kg">{t("unit_kg")}</SelectItem>
+                            <SelectItem value="liter">{t("unit_liter")}</SelectItem>
+                            <SelectItem value="piece">{t("unit_piece")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage>
+                          {Boolean(errors.unit?.message) && t(errors.unit?.message as any)}
                         </FormMessage>
                       </div>
                     </div>

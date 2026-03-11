@@ -4,10 +4,9 @@ import IngredientsMenuDialog from "@/app/[locale]/manage/dishes/[id]/ingredient-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { handleErrorApi } from "@/lib/utils";
 import { useAddIngredientToDishMutation } from "@/queries/useDish";
@@ -43,7 +42,6 @@ export default function AddIngredientToDishForm({
       dishId: idDish,
       ingredientId: 0,
       quantity: 1,
-      unit: "",
       isOptional: false,
       isMain: false,
     },
@@ -125,9 +123,14 @@ export default function AddIngredientToDishForm({
                                 {selectedIngredient?.name}
                               </AvatarFallback>
                             </Avatar>
-                            <div>
-                              <div>{selectedIngredient?.name}</div>
-                            </div>
+                            {selectedIngredient && (
+                              <div>
+                                <div>{selectedIngredient?.name}</div>
+                                <div className="text-black dark:text-gray-300 text-sm">
+                                  Đơn vị: {selectedIngredient?.unit}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           <IngredientsMenuDialog
@@ -158,8 +161,9 @@ export default function AddIngredientToDishForm({
                             id="quantity"
                             type="number"
                             className="w-full"
+                            step="any"
                             {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                           />
                           <FormMessage>
                             {Boolean(errors.quantity?.message) && t(errors.quantity?.message as any)}
@@ -168,61 +172,6 @@ export default function AddIngredientToDishForm({
                       </div>
                     </FormItem>
                   )}
-                />
-
-                {/* Đơn vị phổ biến */}
-                {/** Đặt mảng đơn vị phổ biến ở đầu file hoặc ngoài component */}
-                <FormField
-                  control={form.control}
-                  name="unit"
-                  render={({ field, formState: { errors } }) => {
-                    const units = [
-                      "gam",
-                      "kg",
-                      "ml",
-                      "lít",
-                      "muỗng",
-                      "thìa",
-                      "chén",
-                      "quả",
-                      "củ",
-                      "miếng",
-                      "hộp",
-                      "gói",
-                      "cái",
-                      "lá",
-                      "cây",
-                      "bịch",
-                      "viên",
-                      "ống",
-                    ];
-                    return (
-                      <FormItem>
-                        <div className="grid grid-cols-4 items-center justify-items-start gap-4">
-                          <Label htmlFor="unit">{t("unit")}</Label>
-                          <div className="col-span-3 w-full space-y-2">
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t("chooseUnit")} />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {units.map((unit) => (
-                                  <SelectItem key={unit} value={unit}>
-                                    {unit}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage>
-                              {Boolean(errors.unit?.message) && t(errors.unit?.message as any)}
-                            </FormMessage>
-                          </div>
-                        </div>
-                      </FormItem>
-                    );
-                  }}
                 />
 
                 <FormField

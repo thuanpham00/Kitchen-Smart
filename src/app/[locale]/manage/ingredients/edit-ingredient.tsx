@@ -20,6 +20,7 @@ import { UpdateIngredientBody, UpdateIngredientBodyType } from "@/schemaValidati
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function EditIngredient({
   id,
@@ -28,6 +29,7 @@ export default function EditIngredient({
   id?: number | undefined;
   setId: (value: number | undefined) => void;
 }) {
+  const queryClient = useQueryClient();
   const t = useTranslations("ManageIngredients");
   const ingredientDetail = useGetIngredientDetailQuery({ id: id as number, enabled: Boolean(id) });
   const dataIngredientDetail = ingredientDetail.data?.payload.data;
@@ -44,6 +46,7 @@ export default function EditIngredient({
       isVegetarian: false,
       isVegan: false,
       category: "",
+      unit: "",
       image: undefined,
       isActive: true,
     },
@@ -63,6 +66,7 @@ export default function EditIngredient({
         category: dataIngredientDetail.category || "",
         image: dataIngredientDetail.image || undefined,
         isActive: dataIngredientDetail.isActive,
+        unit: dataIngredientDetail.unit || "",
       });
     }
   }, [dataIngredientDetail, form]);
@@ -105,6 +109,8 @@ export default function EditIngredient({
       toast.success(message, {
         duration: 2000,
       });
+      queryClient.invalidateQueries({ queryKey: ["inventory-stocks"] });
+
       reset();
     } catch (error) {
       handleErrorApi({
@@ -129,7 +135,7 @@ export default function EditIngredient({
         }
       }}
     >
-      <DialogContent className="sm:max-w-150 max-h-screen overflow-auto">
+      <DialogContent className="sm:max-w-150 max-h-[calc(100vh-100px)] overflow-auto">
         <DialogHeader>
           <DialogTitle>{t("updateIngredient")}</DialogTitle>
         </DialogHeader>
@@ -216,6 +222,33 @@ export default function EditIngredient({
                         </Select>
                         <FormMessage>
                           {Boolean(errors.category?.message) && t(errors.category?.message as any)}
+                        </FormMessage>
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field, formState: { errors } }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-4 items-center justify-items-start gap-4">
+                      <Label htmlFor="unit">{t("unit")}</Label>
+                      <div className="col-span-3 w-full space-y-2">
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("chooseUnit")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="kg">{t("unit_kg")}</SelectItem>
+                            <SelectItem value="liter">{t("unit_liter")}</SelectItem>
+                            <SelectItem value="piece">{t("unit_piece")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage>
+                          {Boolean(errors.unit?.message) && t(errors.unit?.message as any)}
                         </FormMessage>
                       </div>
                     </div>

@@ -122,7 +122,7 @@ export default async function MenuPage({ params }: { params: Promise<{ locale: s
                     key={menuItem.id}
                     href={`/dishes/${menuItem.id}`}
                   >
-                    <div className="relative overflow-hidden h-60 bg-muted">
+                    <div className="relative overflow-hidden h-56 bg-muted">
                       <Image
                         alt={dish.name}
                         src={dish.image}

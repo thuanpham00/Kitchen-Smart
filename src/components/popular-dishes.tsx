@@ -66,14 +66,14 @@ export default function PopularDishes({ data }: { data: DishSuggestList }) {
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                     {/* Image */}
-                    <div className="relative h-64 overflow-hidden">
+                    <div className="relative h-58 overflow-hidden">
                       <div className="absolute inset-0 z-9" />
                       <Image
                         src={dish.dish.image}
                         alt={dish.dish.name}
                         width={500}
-                        height={500}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        height={450}
+                        className="w-full h-full object-fill group-hover:scale-110 transition-transform duration-700"
                       />
 
                       {/* Popular Badge */}

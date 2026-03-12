@@ -26,7 +26,7 @@ export function RevenueLineChart({
         <CardTitle>{t("revenueChartTitle")}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig}>
+        <ChartContainer config={chartConfig} className="h-75 w-full">
           <LineChart
             accessibilityLayer
             data={chartData}

@@ -154,7 +154,7 @@ export default function AppProvider({ children }: { children: React.ReactNode })
     if (countPending.data?.payload.data !== undefined) {
       setCountGuestCalls(countPending.data.payload.data);
     }
-    
+
     if (countOrder.data?.payload.data !== undefined) {
       setCountOrderToday(countOrder.data.payload.data);
     }
@@ -195,17 +195,24 @@ export default function AppProvider({ children }: { children: React.ReactNode })
       queryClient.invalidateQueries({ queryKey: ["tables"] }); // cập nhật lại danh sách bàn khi có order mới
     }
 
+    function onUpdateStatusDishFromStock() {
+      queryClient.invalidateQueries({ queryKey: ["menu-items"] }); // cập nhật lại danh sách món ăn khi có sự thay đổi từ kho
+      queryClient.invalidateQueries({ queryKey: ["menu-active"] }); // cập nhật lại danh sách món ăn cho khách hàng khi có sự thay đổi từ kho
+    }
+
     // đếm số cuộc gọi phục vụ từ khách (global toàn app)
     socket.on("count-call-waiter", onGuestCallListener);
     socket.on("count-order", onCountOrder);
     socket.on("update-status-table", onUpdateStatusTable);
     socket.on("table-token-rotated", onUpdateStatusTable);
+    socket.on("update-status-dish-from-stock", onUpdateStatusDishFromStock);
 
     return () => {
       socket.off("count-call-waiter", onGuestCallListener);
       socket.off("count-order", onCountOrder);
       socket.off("update-status-table", onUpdateStatusTable);
       socket.off("table-token-rotated", onUpdateStatusTable);
+      socket.off("update-status-dish-from-stock", onUpdateStatusDishFromStock);
     };
   }, [socket, setCountGuestCalls, countPending, countOrder, queryClient]);
 

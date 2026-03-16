@@ -812,7 +812,7 @@
     "paymentDetailTitle": "Payment Detail #{id}",
     "loadingError": "Cannot load payment information",
     "paid": "\u2713 Paid",
-    "pendingPay": "\u23F3 Pending",
+    "pendingPay": "\u23F3 Cancelled",
     "transfer": "\uD83C\uDFE6 Bank Transfer",
     "orderInfoTitle": "Order Information",
     "customer": "Customer:",

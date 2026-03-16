@@ -50,7 +50,7 @@ export default function FormPaymentDetail({
                   className={
                     dataPaymentDetail.status === "Paid"
                       ? "bg-green-100 text-green-800 border-green-300"
-                      : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                      : "bg-red-100 text-red-800 border-red-300"
                   }
                 >
                   {dataPaymentDetail.status === "Paid" ? t("paid") : t("pendingPay")}

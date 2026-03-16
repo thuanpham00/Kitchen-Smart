@@ -823,7 +823,7 @@
     "paymentDetailTitle": "Chi tiết thanh toán #{id}",
     "loadingError": "Không thể tải thông tin thanh toán",
     "paid": "\u2713 Đã thanh toán",
-    "pendingPay": "\u23F3 Chờ thanh toán",
+    "pendingPay": "\u23F3 Đã hủy",
     "transfer": "\uD83C\uDFE6 Chuyển khoản",
     "orderInfoTitle": "Thông tin đơn hàng",
     "customer": "Khách hàng:",

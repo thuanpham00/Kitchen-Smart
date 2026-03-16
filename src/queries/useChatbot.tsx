@@ -1,5 +1,5 @@
 import { ChatbotApiRequests } from "@/apiRequests/chatbot";
-import { ChatBodyType } from "@/schemaValidations/chatbot.schema";
+import { ChatBodyType, ChatbotQueryType } from "@/schemaValidations/chatbot.schema";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
 export const useGetChatMessages = (showModal: boolean) => {
@@ -19,5 +19,16 @@ export const useSendMessage = () => {
     mutationFn: (body: ChatBodyType) => {
       return ChatbotApiRequests.sendMessage(body);
     },
+  });
+};
+
+export const useGetListChatMessages = (params: ChatbotQueryType) => {
+  return useQuery({
+    queryKey: ["list-message", params],
+    queryFn: () => {
+      return ChatbotApiRequests.list(params);
+    },
+    staleTime: 1 * 60 * 1000, // Dữ liệu sẽ được coi là mới trong 1 phút
+    placeholderData: keepPreviousData,
   });
 };

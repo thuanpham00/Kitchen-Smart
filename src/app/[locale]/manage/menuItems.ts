@@ -90,6 +90,12 @@ export function getMenuItems(t: (key: string) => string) {
       roles: [Role.Owner],
     },
     {
+      title: t("chatbots"),
+      Icon: Headset,
+      href: "/manage/chatbots",
+      roles: [Role.Owner, Role.Employee],
+    },
+    {
       title: t("accounts"),
       Icon: Users2,
       href: "/manage/accounts",

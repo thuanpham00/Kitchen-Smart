@@ -1037,6 +1037,13 @@
     "description2": "Description",
     "unitIngredient": "Unit Ingredient"
   },
+  "ManageChatbots": {
+    "title": "Chatbots",
+    "description": "Manage chatbots that assist customers",
+    "guestId": "Guest ID",
+    "tableSession": "Table Session",
+    "guestName": "Guest Name"
+  },
   "SwitchLanguage": {
     "title": "Switch language",
     "en": "English",
@@ -1069,7 +1076,8 @@
     "accounts": "Staff",
     "supplier": "Supplier",
     "import-export": "Import/Export",
-    "inventory-stock": "Inventory Stock"
+    "inventory-stock": "Inventory Stock",
+    "chatbots": "Chatbots"
   },
   "Footer": {
     "brand": "Restaurant",

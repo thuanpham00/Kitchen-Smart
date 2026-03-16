@@ -36,7 +36,7 @@ export default function NavLinks() {
             <span className="text-black dark:text-white">QRTable</span>
           </Link>
 
-          <div className="h-130 flex flex-col justify-between overflow-auto">
+          <div className="h-130 flex flex-col justify-start gap-3 overflow-y-auto">
             {menuItems.map((Item, index) => {
               if (!Item.roles.includes(isRole as "Owner" | "Employee")) return null;
 

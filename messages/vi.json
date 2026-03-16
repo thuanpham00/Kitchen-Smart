@@ -1048,6 +1048,13 @@
     "description2": "Mô tả",
     "unitIngredient": "Đơn vị nguyên liệu"
   },
+  "ManageChatbots": {
+    "title": "Chatbots",
+    "description": "Quản lý các chatbot hỗ trợ khách hàng",
+    "guestId": "Mã khách",
+    "tableSession": "Phiên bàn",
+    "guestName": "Tên khách"
+  },
   "SwitchLanguage": {
     "title": "Chuyển ngôn ngữ",
     "en": "Tiếng Anh",
@@ -1080,7 +1087,8 @@
     "accounts": "Nhân viên",
     "supplier": "Nhà cung cấp",
     "import-export": "Nhập/Xuất kho",
-    "inventory-stock": "Kho hàng"
+    "inventory-stock": "Kho hàng",
+    "chatbots": "Chatbots"
   },
   "Footer": {
     "brand": "Restaurant",

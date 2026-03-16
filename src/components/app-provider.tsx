@@ -123,7 +123,7 @@ export default function AppProvider({ children }: { children: React.ReactNode })
 
   const listInventoryStockNoPagination = useGetListInventoryStockNoPaginationQuery({
     key: "inventory-stocks-global",
-    enabled: isRole !== Role.Guest && Boolean(isRole) && Boolean(socket), // có nghĩa là chỉ chạy khi đã login
+    enabled: isRole === Role.Owner && Boolean(isRole) && Boolean(socket), // có nghĩa là chỉ chạy khi đã login
   });
 
   useEffect(() => {

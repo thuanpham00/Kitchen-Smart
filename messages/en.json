@@ -39,7 +39,8 @@
     "loginSuccess": "Login successful",
     "invalidEmail": "Invalid email",
     "required": "This field is required",
-    "minmaxPassword": "Password must be between 6 and 100 characters"
+    "minmaxPassword": "Password must be between 6 and 100 characters",
+    "emailOrPasswordInvalid": "Email or password is invalid"
   },
   "DishDetail": {
     "notFound": "Dish not found",
@@ -1080,7 +1081,7 @@
     "chatbots": "Chatbots"
   },
   "Footer": {
-    "brand": "Restaurant",
+    "brand": "QRTable",
     "slogan": "Enjoy the taste of our restaurant — explore the attractive menu and easily order your favorite dishes.",
     "quickLinks": "Quick links",
     "home": "Home",

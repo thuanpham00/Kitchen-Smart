@@ -65,7 +65,8 @@
     "loginSuccess": "Đăng nhập thành công",
     "invalidEmail": "Email không hợp lệ",
     "required": "Trường này không được để trống",
-    "minmaxPassword": "Mật khẩu phải từ 6 đến 100 ký tự"
+    "minmaxPassword": "Mật khẩu phải từ 6 đến 100 ký tự",
+    "emailOrPasswordInvalid": "Email hoặc mật khẩu không đúng"
   },
   "GuestMenu": {
     "title": "Thực đơn",
@@ -1091,7 +1092,7 @@
     "chatbots": "Chatbots"
   },
   "Footer": {
-    "brand": "Restaurant",
+    "brand": "QRTable",
     "slogan": "Thưởng thức hương vị của Nhà hàng chúng tôi — khám phá thực đơn hấp dẫn và đặt món ăn yêu thích của bạn một cách dễ dàng.",
     "quickLinks": "Khám phá nhanh",
     "home": "Trang chủ",

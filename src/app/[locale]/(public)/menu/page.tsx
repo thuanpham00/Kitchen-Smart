@@ -1,7 +1,7 @@
 import { menuApiRequests } from "@/apiRequests/menu";
 import { Badge } from "@/components/ui/badge";
 import { MenuItemStatus } from "@/constants/type";
-import { formatCurrency, wrapServerApi } from "@/lib/utils";
+import { formatCurrency, generateSlugUrl, wrapServerApi } from "@/lib/utils";
 import { MenuActiveResType } from "@/schemaValidations/menu.schema";
 import Image from "next/image";
 import bgMenu from "../../../../../public/images/food_example.jpg";
@@ -121,7 +121,10 @@ export default async function MenuPage({ params }: { params: Promise<{ locale: s
                   <Link
                     className="group relative flex flex-col bg-background dark:bg-border border-2 border-border transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-2 cursor-pointer overflow-hidden rounded-lg"
                     key={menuItem.id}
-                    href={`/dishes/${menuItem.id}`}
+                    href={`/dishes/${generateSlugUrl({
+                      name: menuItem.dish.name,
+                      id: menuItem.id,
+                    })}`}
                   >
                     <div className="relative overflow-hidden h-56 bg-muted">
                       <Image

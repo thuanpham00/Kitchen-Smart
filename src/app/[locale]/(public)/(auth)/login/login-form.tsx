@@ -142,7 +142,10 @@ export default function LoginForm() {
                         </Button>
                       </div>
                       <FormMessage>
-                        {Boolean(errors.password?.message) && t(errors.password?.message as any)}
+                        {Boolean(errors.password?.message) &&
+                          (errors.password?.type === "server"
+                            ? t("emailOrPasswordInvalid") // Lỗi từ server → dịch key
+                            : t(errors.password?.message as any))}
                       </FormMessage>
                     </div>
                   </FormItem>

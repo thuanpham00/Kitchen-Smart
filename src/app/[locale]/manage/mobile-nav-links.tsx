@@ -21,6 +21,8 @@ export default function MobileNavLinks() {
   const isRole = useAppStore((state) => state.isRole);
   const countGuestCalls = useAppStore((state) => state.countGuestCalls);
   const countOrderToday = useAppStore((state) => state.countOrderToday);
+  const countWarningStock = useAppStore((state) => state.countWarningStock);
+
   const t = useTranslations("NavItemManage");
   const menuItems = getMenuItems(t);
 
@@ -32,7 +34,7 @@ export default function MobileNavLinks() {
           <span className="sr-only">Toggle Menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="max-w-75 sm:max-w-xs">
+      <SheetContent side="left" className="max-w-75 sm:max-w-xs p-4">
         <SheetHeader className="sr-only">
           <SheetTitle />
           <SheetDescription />
@@ -48,7 +50,7 @@ export default function MobileNavLinks() {
               width={128}
               height={128}
               quality={100}
-              className="h-9 w-9 md:h-12 md:w-12 object-contain"
+              className="h-12 w-12 md:h-12 md:w-12 object-contain"
             />
             <span className="text-black dark:text-white">QRTable</span>
           </Link>
@@ -57,6 +59,8 @@ export default function MobileNavLinks() {
             const isActive = pathname.includes(Item.href);
             const isCallGuest = Item.href === "/manage/call-waiters";
             const isOrderToday = Item.href === "/manage/orders";
+            const isWarningStock = Item.href === "/manage/inventory-stocks";
+
             return (
               <Link
                 key={index}
@@ -67,13 +71,18 @@ export default function MobileNavLinks() {
                 })}
               >
                 {isCallGuest && (
-                  <span className="absolute top-[8.5%] left-[6%] w-4 h-4 bg-red-500 rounded-full text-white text-xs text-center block">
+                  <span className="absolute top-[15.5%] left-[13%] w-4 h-4 bg-red-500 rounded-full text-white text-xs text-center block">
                     {countGuestCalls}
                   </span>
                 )}
                 {isOrderToday && (
-                  <span className="absolute top-[16%] left-[6%] w-4 h-4 bg-red-500 rounded-full text-white text-xs text-center block">
+                  <span className="absolute top-[26.5%] left-[13%] w-4 h-4 bg-red-500 rounded-full text-white text-xs text-center block">
                     {countOrderToday}
+                  </span>
+                )}
+                {isWarningStock && (
+                  <span className="absolute top-[70.5%] left-[13%] w-4 h-4 bg-red-500 rounded-full text-white text-xs text-center block">
+                    {countWarningStock}
                   </span>
                 )}
                 <Item.Icon className="h-5 w-5" />

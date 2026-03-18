@@ -47,16 +47,16 @@ const getPaymentStatusColor = (status: string) => {
   }
 };
 
-const getVietnamesePaymentStatus = (status: string) => {
+const getVietnamesePaymentStatus = (status: string, t: any) => {
   switch (status) {
     case "Paid":
-      return "Đã thanh toán";
+      return t("paid");
     case "Pending":
-      return "Chờ thanh toán";
+      return t("pending");
     case "Failed":
-      return "Thất bại";
+      return t("failed");
     case "Cancelled":
-      return "Đã hủy";
+      return t("cancelled");
     default:
       return status;
   }
@@ -172,7 +172,7 @@ export const getColumns = (t: any) => {
       header: t("status"),
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
-        return <Badge className={getPaymentStatusColor(status)}>{getVietnamesePaymentStatus(status)}</Badge>;
+        return <Badge className={getPaymentStatusColor(status)}>{getVietnamesePaymentStatus(status, t)}</Badge>;
       },
     },
     {

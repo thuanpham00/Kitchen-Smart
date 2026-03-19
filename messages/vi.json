@@ -643,7 +643,7 @@
     "cancel": "Hủy",
     "processing": "Đang xử lý...",
     "cleanTableConfirmButton": "Xác nhận dọn dẹp",
-    "payForEntireTable": "Thanh toán toàn bộ bàn",
+    "payForEntireTable": "Thanh toán toàn bộ bàn (Áp dụng từ 2 khách trở lên)",
     "totalUnpaid": "Tổng chưa thanh toán",
     "totalPaid": "Tổng đã thanh toán",
     "totalAmount": "Tổng cộng",
@@ -845,7 +845,9 @@
     "statusLabel": "Trạng thái:",
     "methodLabel": "Phương thức:",
     "totalAmountLabel": "Tổng tiền:",
-    "noteLabel": "Ghi chú:"
+    "noteLabel": "Ghi chú:",
+    "billInvidiual": "Hóa đơn riêng lẻ #{id}",
+    "billGroup": "Hóa đơn nhóm #{id}"
   },
   "Setting": {
     "title": "Cài đặt",
@@ -1176,6 +1178,27 @@
     "confirmChangeModeTitle": "Xác nhận đổi hình thức order?",
     "confirmChangeModeDesc": "Bạn có chắc muốn đổi sang hình thức",
     "confirmChangeMode": "Xác nhận",
-    "cancelChangeMode": "Hủy"
+    "cancelChangeMode": "Hủy",
+    "confirmOrderTitle": "Xác nhận đơn hàng món ăn?",
+    "confirmOrderDesc": "Bạn đang đặt {count} món với tổng giá trị:",
+    "orderTypeLabel": "Loại order:",
+    "orderTypeDineIn": "Ăn tại quán",
+    "orderTypeTakeAway": "Mang về",
+    "totalLabel": "Tổng cộng:",
+    "cancel": "Hủy",
+    "confirmOrderAction": "Xác nhận đặt món",
+    "noteOrder": "Lưu ý: Bạn đang có {ordersLength} món trong giỏ hàng.",
+    "table": "Bàn",
+    "quantity": "Số lượng",
+    "typeOrder": "Hình thức",
+    "no-order": "Chưa có đơn hàng nào",
+    "orders": "Đơn hàng",
+    "unpaid-order": "Đơn hàng chưa thanh toán",
+    "paid-order": "Đơn hàng đã thanh toán",
+    "Pending": "Chờ xác nhận",
+    "Processing": "Đang nấu",
+    "Delivered": "Đã phục vụ",
+    "Paid": "Đã thanh toán",
+    "Rejected": "Từ chối"
   }
 }

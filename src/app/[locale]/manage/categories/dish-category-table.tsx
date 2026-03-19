@@ -268,7 +268,7 @@ export default function DishCategoryTable() {
               </Button>
 
               <Button variant="outline" size="icon" className="bg-blue-500!" type="submit">
-                <Search />
+                <Search color="white"/>
               </Button>
             </form>
           </Form>

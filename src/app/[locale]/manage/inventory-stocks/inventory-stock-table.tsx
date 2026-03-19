@@ -399,7 +399,7 @@ export default function InventoryStockTable() {
               </Button>
 
               <Button variant="outline" size="icon" className="bg-blue-500!" type="submit">
-                <Search />
+                <Search color="white" />
               </Button>
             </form>
           </Form>

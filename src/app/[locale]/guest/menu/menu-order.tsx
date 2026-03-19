@@ -202,9 +202,10 @@ export default function MenuOrder() {
         {menuActive?.name ? menuActive.name : "Menu quán"} -{" "}
         <Badge variant="default">
           {" "}
-          {infoGuest?.tableTypeQR === OrderModeType.DINE_IN ? `Bàn ${infoGuest.tableNumber}` : "Mang đi"}
+          {infoGuest?.tableTypeQR === OrderModeType.DINE_IN ? `${t("table")} ${infoGuest.tableNumber}` : t("takeaway")}
         </Badge>
       </h1>
+
       <div className="my-4 flex gap-2 items-center justify-end">
         <Button
           className="inline-flex items-center justify-between dark:bg-white!"
@@ -377,14 +378,15 @@ export default function MenuOrder() {
           </div>
         </div>
       </div>
+
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận đơn hàng món ăn?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmOrderTitle")}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Bạn đang đặt {orders.length} món với tổng giá trị:
+                  {t("confirmOrderDesc", { count: orders.length })}{" "}
                 </p>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {orders.map((order) => {
@@ -407,21 +409,21 @@ export default function MenuOrder() {
                   })}
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="font-semibold">Loại order:</span>
+                  <span className="font-semibold">{t("orderTypeLabel")}</span>
                   <span className="text-lg font-bold text-orange-600">
-                    {orderMode === OrderModeType.DINE_IN ? "Ăn tại quán" : "Mang về"}
+                    {orderMode === OrderModeType.DINE_IN ? t("orderTypeDineIn") : t("orderTypeTakeAway")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold">Tổng cộng:</span>
+                  <span className="font-semibold">{t("totalLabel")}</span>
                   <span className="text-lg font-bold text-orange-600">{formatCurrency(totalPriceOrder)}</span>
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setOpen(false)}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleOrder}>Xác nhận đặt món</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setOpen(false)}>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleOrder}>{t("confirmOrderAction")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -441,7 +443,7 @@ export default function MenuOrder() {
               ?
               {orders.length > 0 && (
                 <span className="block mt-2 text-yellow-600">
-                  Lưu ý: Bạn đang có {orders.length} món trong giỏ hàng.
+                  {t("noteOrder", { ordersLength: orders.length })}
                 </span>
               )}
             </AlertDialogDescription>

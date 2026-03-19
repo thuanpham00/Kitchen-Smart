@@ -228,7 +228,6 @@ const getColumns = (t: any) => {
             <SelectContent>
               {}
               {Object.entries(listStatusOrderActive).map(([key, status]) => {
-                console.log(key, status);
                 // nếu chờ xử lý thì cho phép "Đang nấu" hoặc "Từ chối"
                 // nếu "Đang nấu" thì cho phép "Đã phục vụ"
                 // nếu "Đã phục vụ thì cho phép "Thanh toán"
@@ -278,7 +277,7 @@ const getColumns = (t: any) => {
               size="sm"
               onClick={openEditOrder}
               disabled={
-                row.original.status === OrderStatus.Rejected || row.original.status === OrderStatus.Paid
+                row.original.status !== OrderStatus.Pending
               }
               className="bg-blue-500 hover:bg-blue-400 text-white"
             >

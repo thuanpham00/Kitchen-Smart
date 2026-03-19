@@ -1,16 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/incompatible-library */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { createContext, useContext, useState } from "react";
-import { formatCurrency, formatDateTimeToLocaleString } from "@/lib/utils";
+import { createContext, useState } from "react";
 import AutoPagination from "@/components/auto-pagination";
 import useQueryParams from "@/hooks/useQueryParams";
 import { isUndefined, omitBy } from "lodash";
-import { Badge } from "@/components/ui/badge";
 import {
   GetPaymentsQueryType,
   PaymentListResType,
@@ -29,67 +23,13 @@ import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslations } from "next-intl";
+import PaymentItem, { getGroupColor } from "@/app/[locale]/manage/payments/payment-item";
+import { formatCurrency } from "@/lib/utils";
 
-type PaymentItem = PaymentListResType["data"][0];
-
-const getPaymentStatusColor = (status: string) => {
-  switch (status) {
-    case "Paid":
-      return "bg-green-100 text-green-800 border-green-300";
-    case "Pending":
-      return "bg-yellow-100 text-yellow-800 border-yellow-300";
-    case "Failed":
-      return "bg-red-400 text-red-800 border-red-300";
-    case "Cancelled":
-      return "bg-red-500 text-white border-red-300";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-300";
-  }
-};
-
-const getVietnamesePaymentStatus = (status: string, t: any) => {
-  switch (status) {
-    case "Paid":
-      return t("paid");
-    case "Pending":
-      return t("pending");
-    case "Failed":
-      return t("failed");
-    case "Cancelled":
-      return t("cancelled");
-    default:
-      return status;
-  }
-};
-
-const getPaymentMethodLabel = (method: string, t: any) => {
-  switch (method) {
-    case "CASH":
-      return `${t("cash")}`;
-    case "SEPAY":
-      return `${t("sepay")}`;
-    default:
-      return method;
-  }
-};
-
-// Helper function để tạo màu cho từng payment group
-const getGroupColor = (groupId: number) => {
-  const colors = [
-    "bg-blue-50 dark:bg-blue-950/30 border-l-blue-400",
-    "bg-green-50 dark:bg-green-950/30 border-l-green-400",
-    "bg-purple-50 dark:bg-purple-950/30 border-l-purple-400",
-    "bg-pink-50 dark:bg-pink-950/30 border-l-pink-400",
-    "bg-yellow-50 dark:bg-yellow-950/30 border-l-yellow-400",
-    "bg-indigo-50 dark:bg-indigo-950/30 border-l-indigo-400",
-    "bg-orange-50 dark:bg-orange-950/30 border-l-orange-400",
-    "bg-teal-50 dark:bg-teal-950/30 border-l-teal-400",
-  ];
-  return colors[groupId % colors.length];
-};
+export type PaymentItemType = PaymentListResType["data"][0];
 
 // sử dụng trong phạm vị component AccountTable và các component con của nó
-const PaymentTableContext = createContext<{
+export const PaymentTableContext = createContext<{
   setPaymentIdEdit: (value: number) => void;
   paymentIdEdit: number | undefined;
 }>({
@@ -97,152 +37,8 @@ const PaymentTableContext = createContext<{
   paymentIdEdit: undefined,
 });
 
-export const getColumns = (t: any) => {
-  const columns: ColumnDef<PaymentItem>[] = [
-    {
-      accessorKey: "id",
-      header: "ID",
-      cell: ({ row }) => {
-        const paymentGroup = row.original.paymentGroup;
-        return (
-          <div className="flex items-center gap-2">
-            <div className="font-mono">#{row.getValue("id")}</div>
-            {paymentGroup && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
-                {t("sharedBill", { id: paymentGroup.id })}
-              </Badge>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "tableNumber",
-      header: t("tableGuest"),
-      cell: ({ row }) => {
-        const tableNumber = row.original.tableNumber;
-        const guest = row.original.guest;
-
-        if (tableNumber) {
-          return (
-            <div className="space-y-1">
-              <div className="font-semibold">{t("tableLabel", { number: tableNumber })}</div>
-              {guest && (
-                <div className="text-xs text-muted-foreground">
-                  {guest.name}{" "}
-                  <Badge variant="outline" className="text-xs">
-                    #{guest.id}
-                  </Badge>
-                </div>
-              )}
-            </div>
-          );
-        }
-
-        if (guest) {
-          return (
-            <div className="space-y-1">
-              <div className="font-semibold">{guest.name}</div>
-              <Badge variant="outline" className="text-xs">
-                #{guest.id}
-              </Badge>
-            </div>
-          );
-        }
-
-        return <span className="text-muted-foreground">-</span>;
-      },
-    },
-    {
-      accessorKey: "totalAmount",
-      header: t("totalAmount"),
-      cell: ({ row }) => (
-        <div className="font-semibold text-orange-600">{formatCurrency(row.getValue("totalAmount"))}</div>
-      ),
-    },
-    {
-      accessorKey: "paymentMethod",
-      header: t("paymentMethod"),
-      cell: ({ row }) => (
-        <div className="text-sm">{getPaymentMethodLabel(row.getValue("paymentMethod"), t)}</div>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: t("status"),
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        return <Badge className={getPaymentStatusColor(status)}>{getVietnamesePaymentStatus(status, t)}</Badge>;
-      },
-    },
-    {
-      accessorKey: "orders",
-      header: t("orders"),
-      cell: ({ row }) => {
-        const orders = row.original.orders;
-        const totalQuantity = orders.reduce((acc, order) => acc + order.quantity, 0);
-        return (
-          <div className="text-center">
-            <div className="font-semibold">{t("orderCount", { count: orders.length })}</div>
-            <div className="text-xs text-muted-foreground">{t("itemCount", { count: totalQuantity })}</div>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "createdBy",
-      header: t("createdBy"),
-      cell: ({ row }) => {
-        const createdBy = row.original.createdBy;
-        return (
-          <div className="text-sm">
-            <div>{createdBy.name}</div>
-            <div className="text-xs text-muted-foreground">#{createdBy.id}</div>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "createdAt",
-      header: t("createdAt"),
-      cell: ({ row }) => (
-        <div className="text-xs whitespace-nowrap">
-          {formatDateTimeToLocaleString(row.getValue("createdAt"))}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "note",
-      header: t("note"),
-      cell: ({ row }) => {
-        const note = row.getValue("note") as string | null;
-        return <div className="max-w-50 truncate text-xs text-muted-foreground">{note || "-"}</div>;
-      },
-    },
-    {
-      id: "actions",
-      header: t("actions"),
-      cell: function Actions({ row }) {
-        const { setPaymentIdEdit } = useContext(PaymentTableContext);
-        return (
-          <div>
-            <button
-              onClick={() => setPaymentIdEdit(row.original.id)}
-              className="bg-blue-500 px-2 py-1 rounded-lg hover:bg-blue-400 text-white text-sm"
-            >
-              {t("detail")}
-            </button>
-          </div>
-        );
-      },
-    },
-  ];
-  return columns;
-};
-
 export default function PaymentTable() {
   const t = useTranslations("ManagePayments");
-  const columns = getColumns(t);
 
   const router = useRouter();
   const queryParams = useQueryParams();
@@ -331,31 +127,16 @@ export default function PaymentTable() {
   const total = (listPayment.data?.payload.pagination && listPayment.data?.payload.pagination.total) || 0;
 
   // Tạo map để track các payment group và đếm số lượng payment trong mỗi group
-  const paymentGroups = new Map<number, PaymentItem[]>();
+  const paymentGroups: Record<string, PaymentItemType[]> = {};
   data.forEach((payment) => {
     if (payment.paymentGroup) {
       const groupId = payment.paymentGroup.id;
-      const group = paymentGroups.get(groupId) || [];
-      group.push(payment);
-      paymentGroups.set(groupId, group);
+      if (!paymentGroups[groupId]) paymentGroups[groupId] = [];
+      paymentGroups[groupId].push(payment);
+    } else {
+      if (!paymentGroups[`no-group`]) paymentGroups[`no-group`] = [];
+      paymentGroups[`no-group`].push(payment);
     }
-  });
-
-  const pagination = {
-    pageIndex: queryConfig.page ? queryConfig.page - 1 : 0,
-    pageSize: queryConfig.limit,
-  };
-
-  const table = useReactTable({
-    data,
-    columns,
-    manualPagination: true,
-    manualFiltering: true,
-    manualSorting: true,
-    getCoreRowModel: getCoreRowModel(),
-    state: {
-      pagination,
-    },
   });
 
   return (
@@ -465,7 +246,7 @@ export default function PaymentTable() {
                   Reset
                 </Button>
                 <Button className="bg-blue-500!" variant={"outline"} type="submit">
-                  <Search />
+                  <Search color="white" />
                 </Button>
               </div>
             </div>
@@ -474,53 +255,47 @@ export default function PaymentTable() {
         <div className="rounded-md border">
           <FormPaymentDetail id={paymentIdEdit} setId={setPaymentIdEdit} />
 
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => {
-                  const payment = row.original;
-                  const paymentGroup = payment.paymentGroup;
-                  const groupSize = paymentGroup ? paymentGroups.get(paymentGroup.id)?.length : 0;
-                  const isGrouped = groupSize && groupSize > 1;
+          <div className="grid grid-cols-10 gap-2 items-center justify-start p-2 text-sm">
+            <div className="col-span-1">Type</div>
+            <div className="col-span-1">{t("tableGuest")}</div>
+            <div className="col-span-1">{t("totalAmount")}</div>
+            <div className="col-span-1">{t("paymentMethod")}</div>
+            <div className="col-span-1">{t("status")}</div>
+            <div className="col-span-1">{t("orders")}</div>
+            <div className="col-span-1">{t("createdBy")}</div>
+            <div className="col-span-1">{t("createdAt")}</div>
+            <div className="col-span-1">{t("note")}</div>
+            <div className="col-span-1">{t("actions")}</div>
+          </div>
 
-                  return (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className={isGrouped ? `border-l-4 ${getGroupColor(paymentGroup!.id)}` : ""}
+          {data.length > 0 &&
+            Object.entries(paymentGroups).map(([groupId, payments]) => {
+              const totalAmountGroup = payments.reduce((acc, payment) => acc + payment.totalAmount, 0);
+              return (
+                <div key={groupId}>
+                  {groupId !== "no-group" && (
+                    <div
+                      className={`grid grid-cols-10 gap-2 items-center pl-2 py-2 border-l-4 ${getGroupColor(Number(groupId))}`}
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                      <div className="col-span-1 text-sm">{t("billGroup", { id: groupId })}</div>
+                      <div className="col-span-1 text-sm"> </div>
+                      <div className="col-span-1 text-sm font-semibold text-orange-600">
+                        {formatCurrency(totalAmountGroup)}
+                      </div>
+                    </div>
+                  )}
+
+                  {payments.map((payment: PaymentItemType, index: number) => (
+                    <PaymentItem
+                      data={payment}
+                      paymentGroups={paymentGroups}
+                      key={payment.id}
+                      indexForGroup={index + 1}
+                    />
+                  ))}
+                </div>
+              );
+            })}
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
           <div className="text-xs text-muted-foreground py-4 flex-1 ">

@@ -375,11 +375,13 @@ function AllOrderByTablePage() {
         setTableSessionId,
       }}
     >
-      <div className="container mx-auto p-4 space-y-6">
+      <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Bàn số {tableNumber}</h1>
+              <h1 className="text-3xl font-bold">
+                {t("table")} {tableNumber}
+              </h1>
               {dataTableSessionActive && (
                 <div>
                   <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
@@ -480,7 +482,7 @@ function AllOrderByTablePage() {
             <div className="flex justify-end">
               <Button
                 onClick={handlePayTable}
-                disabled={payOrderTableMutation.isPending || totalTableUnpaid === 0}
+                disabled={payOrderTableMutation.isPending || Object.keys(selectedTableGuests).length < 2}
                 size="lg"
                 className="gap-2 bg-green-500 hover:bg-green-600 text-white"
               >

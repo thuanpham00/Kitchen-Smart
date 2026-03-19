@@ -632,7 +632,7 @@
     "cancel": "Cancel",
     "processing": "Processing...",
     "cleanTableConfirmButton": "Confirm cleanup",
-    "payForEntireTable": "Pay for entire table",
+    "payForEntireTable": "Pay for entire table (Applies to 2 or more guests)",
     "totalUnpaid": "Total Unpaid",
     "totalPaid": "Total Paid",
     "totalAmount": "Total Amount",
@@ -834,7 +834,9 @@
     "statusLabel": "Status:",
     "methodLabel": "Method:",
     "totalAmountLabel": "Total:",
-    "noteLabel": "Note:"
+    "noteLabel": "Note:",
+    "billInvidiual": "Individual Bill #{id}",
+    "billGroup": "Group Bill #{id}"
   },
   "Setting": {
     "title": "Setting",
@@ -1165,6 +1167,27 @@
     "confirmChangeModeTitle": "Confirm Change Order Mode?",
     "confirmChangeModeDesc": "Are you sure you want to change to this order mode",
     "confirmChangeMode": "Confirm",
-    "cancelChangeMode": "Cancel"
+    "cancelChangeMode": "Cancel",
+    "confirmOrderTitle": "Confirm your food order?",
+    "confirmOrderDesc": "You are ordering {count} dishes with a total value:",
+    "orderTypeLabel": "Order type:",
+    "orderTypeDineIn": "Dine-in",
+    "orderTypeTakeAway": "Take away",
+    "totalLabel": "Total:",
+    "cancel": "Cancel",
+    "confirmOrderAction": "Confirm order",
+    "noteOrder": "Note: You have {ordersLength} items in your cart.",
+    "table": "Table",
+    "quantity": "Quantity",
+    "typeOrder": "Order type",
+    "no-order": "No orders yet",
+    "orders": "Orders",
+    "unpaid-order": "Unpaid orders",
+    "paid-order": "Paid orders",
+    "Pending": "Pending",
+    "Processing": "Processing",
+    "Delivered": "Delivered",
+    "Paid": "Paid",
+    "Rejected": "Rejected"
   }
 }

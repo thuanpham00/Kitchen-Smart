@@ -19,7 +19,7 @@ export default function NavLinks() {
 
   return (
     <TooltipProvider>
-      <aside className="fixed inset-y-0 left-0 z-10 hidden sm:w-50 border-r dark:bg-background bg-[#ddd] sm:flex flex-col">
+      <aside className="fixed inset-y-0 left-0 z-10 hidden sm:w-50 border-r dark:bg-background bg-white sm:flex flex-col">
         <nav className="px-2 py-4">
           <Link
             href="/"
@@ -53,7 +53,7 @@ export default function NavLinks() {
                     <Link
                       href={Item.href}
                       className={cn(
-                        "flex items-center justify-start gap-2 p-2 pl-4 rounded-lg transition-colors hover:text-foreground md:h-8 md:w-full relative",
+                        "flex items-center justify-start gap-2 p-2 pl-4 rounded-lg transition-colors hover:text-foreground md:h-8 md:w-full relative font-medium",
                         {
                           "bg-accent text-accent-foreground": isActive,
                           "text-muted-foreground": !isActive,

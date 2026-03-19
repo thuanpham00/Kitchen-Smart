@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useGuestOrderQuery } from "@/queries/useGuest";
 import Image from "next/image";
@@ -12,31 +13,34 @@ import { toast } from "sonner";
 import { formatCurrency, getVietnameseOrderStatus } from "../../../../lib/utils";
 import { useAppStore } from "@/components/app-provider";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 
-const orderStatusMap = {
+const orderStatusMap = (t: any) => ({
   [OrderStatus.Pending]: {
-    label: "Chờ xác nhận",
+    label: t("Pending"),
     className: "bg-yellow-100 text-yellow-800 border-yellow-300",
   },
   [OrderStatus.Processing]: {
-    label: "Đang nấu",
+    label: t("Processing"),
     className: "bg-blue-100 text-blue-800 border-blue-300",
   },
   [OrderStatus.Rejected]: {
-    label: "Từ chối",
+    label: t("Rejected"),
     className: "bg-red-100 text-red-800 border-red-300",
   },
   [OrderStatus.Delivered]: {
-    label: "Đã phục vụ",
+    label: t("Delivered"),
     className: "bg-green-100 text-green-800 border-green-300",
   },
   [OrderStatus.Paid]: {
-    label: "Đã thanh toán",
+    label: t("Paid"),
     className: "bg-gray-100 text-gray-800 border-gray-300",
   },
-};
+});
 
 export default function OrdersCart() {
+  const t = useTranslations("GuestOrderPage");
+
   const infoGuest = useAppStore((state) => state.infoGuest);
   const socket = useAppStore((state) => state.socket);
   const { data, refetch } = useGuestOrderQuery();
@@ -151,14 +155,16 @@ export default function OrdersCart() {
   return (
     <div className="space-y-4">
       <div className="flex justify-center gap-2 items-center">
-        <h1 className="text-center text-xl font-bold">Đơn hàng - </h1>
+        <h1 className="text-center text-xl font-bold">{t("orders")} - </h1>
         <Badge variant="default">
-          {infoGuest?.tableTypeQR === OrderModeType.DINE_IN ? `Bàn ${infoGuest.tableNumber}` : "Mang đi"}
+          {infoGuest?.tableTypeQR === OrderModeType.DINE_IN
+            ? `${t("table")} ${infoGuest.tableNumber}`
+            : t("TakeAway")}
         </Badge>
       </div>
       <div className="flex flex-col h-[calc(100vh-330px)] overflow-y-auto gap-4 py-2">
         {listOrder.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">Chưa có đơn hàng nào</div>
+          <div className="text-center text-gray-500 py-8">{t("no-order")}</div>
         ) : (
           listOrder.map((order) => (
             <div key={order.id} className="flex gap-4 bg-card p-3 rounded-lg shadow-sm border">
@@ -178,22 +184,22 @@ export default function OrdersCart() {
                   <h3 className="text-[15px] font-semibold">{order.dishSnapshot.name}</h3>
                   <span
                     className={`text-xs font-medium px-2 py-1 rounded-md border ${
-                      orderStatusMap[order.status].className
+                      orderStatusMap(t)[order.status].className
                     }`}
                   >
-                    {orderStatusMap[order.status].label}
+                    {orderStatusMap(t)[order.status].label}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs">Hình thức:</span>
+                  <span className="text-xs">{t("typeOrder")}:</span>
                   <span className="text-sm font-semibold">
-                    {order.orderMode === OrderModeType.DINE_IN ? "Tại chỗ" : "Mang đi"}
+                    {order.orderMode === OrderModeType.DINE_IN ? t("DineIn") : t("TakeAway")}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs">Số lượng:</span>
+                    <span className="text-xs">{t("quantity")}:</span>
                     <span className="text-sm font-semibold">{order.quantity}</span>
                   </div>
                   <div className="text-sm font-bold text-white bg-linear-to-r from-orange-500 to-amber-500 px-3 py-1 rounded-lg shadow-lg">
@@ -212,7 +218,7 @@ export default function OrdersCart() {
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
               <span className="text-base font-semibold text-orange-900 dark:text-orange-100">
-                Đơn chưa thanh toán ({totalPrice.waitingForPaying.quantity})
+                {t("unpaid-order")} ({totalPrice.waitingForPaying.quantity})
               </span>
             </div>
             <span className="text-xl font-bold text-orange-600 dark:text-orange-400">
@@ -225,7 +231,7 @@ export default function OrdersCart() {
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
                 <span className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                  Đơn đã thanh toán ({totalPrice.payed.quantity})
+                  {t("paid-order")} ({totalPrice.payed.quantity})
                 </span>
               </div>
               <span className="text-lg font-bold text-gray-600 dark:text-gray-400">

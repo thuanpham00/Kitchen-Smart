@@ -12,8 +12,8 @@ export default function ButtonBackPage() {
         onClick={() => router.back()}
         aria-label={t("buttonBack")}
         className={
-          "inline-flex items-center gap-2 rounded-lg py-1.5 text-sm font-medium " +
-          "text-black dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors "
+          "inline-flex items-center gap-2 text-sm font-medium " +
+          "text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors "
         }
       >
         <ArrowLeft className="w-4 h-4 stroke-current" />

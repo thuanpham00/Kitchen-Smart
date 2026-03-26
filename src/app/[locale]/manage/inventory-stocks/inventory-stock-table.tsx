@@ -11,7 +11,6 @@ import AutoPagination from "@/components/auto-pagination";
 import { RefreshCcw, Search, X } from "lucide-react";
 import useQueryParams from "@/hooks/useQueryParams";
 import { isUndefined, omitBy } from "lodash";
-import { useRouter } from "@/i18n/routing";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem } from "@/components/ui/form";
@@ -35,6 +34,7 @@ import InventoryBatchesDialog from "@/app/[locale]/manage/inventory-stocks/inven
 import { toast } from "sonner";
 import { useAppStore } from "@/components/app-provider";
 import { Role } from "@/constants/type";
+import useSearchForm from "@/hooks/useSearchForm";
 
 type InventoryStockItem = InventoryStockListResType["data"][0];
 
@@ -63,7 +63,7 @@ export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
     size: 200,
     cell: ({ row }) => (
       <div className="font-medium flex items-center gap-2">
-        <div>
+        <div className="shrink-0 w-16">
           <Image
             src={row.original.ingredientImage as string}
             alt={row.original.ingredientName as string}
@@ -72,7 +72,7 @@ export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
             className="h-16 w-16 rounded-md"
           />
         </div>
-        <div>
+        <div className="">
           {row.getValue("ingredientName") || t("noData")}
           {row.original.ingredientCategory && (
             <div className="text-xs text-muted-foreground">({row.original.ingredientCategory})</div>
@@ -87,6 +87,7 @@ export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
     size: 100,
     cell: ({ row }) => {
       const quantity = row.getValue("quantity") as number;
+      const quantityRound = Math.round(quantity * 100) / 100; // làm tròn đến 2 chữ số thập phân
       const minStock = row.original.minStock;
       const maxStock = row.original.maxStock;
 
@@ -97,7 +98,7 @@ export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
         colorClass = "text-orange-600";
       }
 
-      return <div className={`text-right ${colorClass}`}>{quantity}</div>;
+      return <div className={`text-right ${colorClass}`}>{quantityRound}</div>;
     },
   },
   {
@@ -259,7 +260,6 @@ export const getColumns = (t: any): ColumnDef<InventoryStockItem>[] => [
 export default function InventoryStockTable() {
   const t = useTranslations("ManageInventoryStocks");
   const columns = getColumns(t);
-  const router = useRouter();
   const queryParams = useQueryParams();
 
   const isRole = useAppStore((state) => state.isRole);
@@ -273,7 +273,7 @@ export default function InventoryStockTable() {
       page,
       limit,
       ingredientName: queryParams.ingredientName || undefined,
-      lowStock: queryParams.lowStock === "true" ? true : queryParams.lowStock === "false" ? false : undefined,
+      lowStock: queryParams.lowStock || undefined,
     },
     isUndefined,
   ) as InventoryStockQueryType;
@@ -282,40 +282,15 @@ export default function InventoryStockTable() {
     resolver: zodResolver(SearchInventoryStock),
     defaultValues: {
       ingredientName: queryParams.ingredientName || "",
-      lowStock: queryParams.lowStock === "true" ? true : queryParams.lowStock === "false" ? false : undefined,
+      lowStock: queryParams.lowStock || "",
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, ingredientName: undefined, lowStock: undefined })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset({
-      ingredientName: "",
-      lowStock: undefined,
-    });
-    router.push(`/manage/inventory-stocks?${params.toString()}`);
-  };
-
-  const submit = (data: SearchInventoryStockType) => {
-    const params = new URLSearchParams(
-      Object.entries({
-        ...queryConfig,
-        page: 1,
-        ingredientName: data.ingredientName,
-        lowStock: data.lowStock,
-      })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/inventory-stocks?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/inventory-stocks");
 
   const [inventoryStockIdEdit, setInventoryStockIdEdit] = useState<number | undefined>();
 
-  const {data: listInventoryStock, refetch} = useGetListInventoryStockQuery(queryConfig);
+  const { data: listInventoryStock, refetch } = useGetListInventoryStockQuery(queryConfig);
   const listInventoryStockNoPagination = useGetListInventoryStockNoPaginationQuery({
     key: "inventory-stocks-no-pagination",
     enabled: isRole !== Role.Guest && Boolean(isRole) && Boolean(socket), // có nghĩa là chỉ chạy khi đã login
@@ -383,11 +358,8 @@ export default function InventoryStockTable() {
                       <Label htmlFor="airplane-mode">{t("lowStock")}</Label>
                       <Switch
                         id="airplane-mode"
-                        checked={field.value === true}
-                        onCheckedChange={(val) => {
-                          field.onChange(val);
-                          console.log(val);
-                        }}
+                        checked={field.value === "true"}
+                        onCheckedChange={(val) => field.onChange(val ? "true" : "false")}
                       />
                     </div>
                   </FormItem>

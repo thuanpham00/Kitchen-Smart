@@ -14,7 +14,7 @@ export const SearchExportReceipt = z
       return from <= to;
     },
     {
-      message: "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc",
+      message: "validFromDate",
       path: ["fromDate"],
     },
   );

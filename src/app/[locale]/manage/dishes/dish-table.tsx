@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { useGetListDishCategoryNameQuery } from "@/queries/useDishCategory";
 import { useTranslations } from "next-intl";
+import useSearchForm from "@/hooks/useSearchForm";
 
 type DishItem = DishListResType["data"][0];
 
@@ -174,24 +175,7 @@ export default function DishTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, categoryId: undefined, name: undefined })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset();
-    router.push(`/manage/dishes?${params.toString()}`);
-  };
-
-  const submit = (data: SearchDishType) => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, name: data.name, categoryId: data.categoryId })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/dishes?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/dishes");
 
   const [dishIdEdit, setDishIdEdit] = useState<number | undefined>();
   const [dishDelete, setDishDelete] = useState<DishItem | null>(null);

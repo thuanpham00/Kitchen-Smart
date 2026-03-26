@@ -196,18 +196,18 @@ export const getVietnameseOrderModeStatus = (status: (typeof OrderModeType)[keyo
   }
 };
 
-export const getVietnameseOrderStatus = (status: (typeof OrderStatus)[keyof typeof OrderStatus]) => {
+export const getVietnameseOrderStatus = (status: (typeof OrderStatus)[keyof typeof OrderStatus], t: any) => {
   switch (status) {
     case OrderStatus.Delivered:
-      return "Đã phục vụ";
+      return t("orderStatusDelivery");
     case OrderStatus.Paid:
-      return "Đã thanh toán";
+      return t("orderStatusPaid");
     case OrderStatus.Pending:
-      return "Chờ xử lý";
+      return t("orderStatusPending");
     case OrderStatus.Processing:
-      return "Đang nấu";
+      return t("orderStatusProcessing");
     default:
-      return "Từ chối";
+      return t("orderStatusRejected");
   }
 };
 

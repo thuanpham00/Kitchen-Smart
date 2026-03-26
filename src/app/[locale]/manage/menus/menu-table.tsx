@@ -32,6 +32,7 @@ import { Form, FormField, FormItem } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
+import useSearchForm from "@/hooks/useSearchForm";
 
 export type MenuItem = MenuListResType["data"][0];
 
@@ -160,24 +161,7 @@ export default function MenuTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, name: undefined })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset();
-    router.push(`/manage/menus?${params.toString()}`);
-  };
-
-  const submit = (data: SearchMenuType) => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, name: data.name })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/menus?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/menus");
 
   const { data: listMenu, refetch } = useGetListMenuQuery(queryConfig);
 

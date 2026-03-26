@@ -55,7 +55,31 @@
     "title": "Đăng nhập để gọi món",
     "nameGuest": "Tên khách hàng",
     "buttonLogin": "Đăng nhập",
-    "description": "Nhập thông tin đăng nhập để đặt hàng"
+    "description": "Nhập thông tin đăng nhập để đặt hàng",
+    "dietaryPreferencesLabel": "Sở thích ăn uống (tùy chọn)",
+    "dietaryPreferencesDesc": "Chọn các món ăn bạn ưa thích để được tư vấn phù hợp",
+    "allergyInfoLabel": "Dị ứng thực phẩm (tùy chọn)",
+    "allergyInfoDesc": "Chọn các thực phẩm bạn dị ứng để tránh trong món ăn",
+    "dietary": {
+      "vegetarian": "Chay",
+      "vegan": "Thuần chay",
+      "low-carb": "Ít tinh bột",
+      "gluten-free": "Không gluten",
+      "keto": "Keto",
+      "pescatarian": "Ăn hải sản"
+    },
+    "allergen": {
+      "shellfish": "Hải sản có vỏ",
+      "dairy": "Sữa/Bơ sữa",
+      "peanuts": "Đậu phộng",
+      "tree-nuts": "Các loại hạt",
+      "gluten": "Gluten",
+      "soy": "Đậu nành",
+      "eggs": "Trứng",
+      "fish": "Cá",
+      "sesame": "Mè",
+      "mustard": "Mù tạt"
+    }
   },
   "Login": {
     "title": "Đăng nhập",
@@ -195,7 +219,8 @@
     "batchNumber": "Số lô",
     "note": "Ghi chú",
     "noItems": "Không có nguyên liệu nào",
-    "close": "Đóng"
+    "close": "Đóng",
+    "validFromDate": "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc"
   },
   "ManageImportReceipts": {
     "title": "Phiếu nhập kho",
@@ -275,7 +300,8 @@
     "subtotal": "Thành tiền",
     "enterQuantity": "Nhập số lượng",
     "enterUnitPrice": "Nhập đơn giá",
-    "unitRequired": "Đơn vị không được để trống"
+    "unitRequired": "Đơn vị không được để trống",
+    "validFromDate": "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc"
   },
   "ManageDishes": {
     "title": "Món ăn",
@@ -691,7 +717,12 @@
     "tableSessionEmpty": "Trống",
     "tableSessionServing": "Đang phục vụ",
     "note": "Ghi chú",
-    "capacity": "Sức chứa"
+    "capacity": "Sức chứa",
+    "orderStatusDelivery": "Đã phục vụ",
+    "orderStatusPaid": "Đã thanh toán",
+    "orderStatusPending": "Chờ xử lý",
+    "orderStatusProcessing": "Đang nấu",
+    "orderStatusRejected": "Từ chối"
   },
   "ManageDashboard": {
     "title": "Bảng điều khiển",
@@ -1203,7 +1234,12 @@
     "Delivered": "Đã phục vụ",
     "Paid": "Đã thanh toán",
     "Rejected": "Từ chối",
-    "note": "Ghi chú"
+    "note": "Ghi chú",
+    "orderStatusDelivery": "Đã phục vụ",
+    "orderStatusPaid": "Đã thanh toán",
+    "orderStatusPending": "Chờ xử lý",
+    "orderStatusProcessing": "Đang nấu",
+    "orderStatusRejected": "Từ chối"
   },
   "GuestHistoryPayment": {
     "title": "Lịch sử thanh toán",

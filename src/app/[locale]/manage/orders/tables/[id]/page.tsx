@@ -601,7 +601,7 @@ function AllOrderByTablePage() {
                                   variant="outline"
                                   className="text-xs bg-green-100 text-green-800 border-green-300"
                                 >
-                                  {getVietnameseOrderStatus(order.status)}
+                                  {getVietnameseOrderStatus(order.status, t)}
                                 </Badge>
                               </div>
                               <div className="flex justify-between items-center text-xs">

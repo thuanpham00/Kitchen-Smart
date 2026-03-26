@@ -41,14 +41,15 @@ const DietaryPreferenceValues = [
   "pescatarian",
 ] as const;
 
-const DietaryPreferenceLabels = {
-  vegetarian: "Chay",
-  vegan: "Thuần chay",
-  "low-carb": "Ít tinh bột",
-  "gluten-free": "Không gluten",
-  keto: "Keto",
-  pescatarian: "Ăn hải sản",
-};
+// Sử dụng i18n cho label sở thích ăn uống
+const DietaryPreferenceLabels = (t: any) => ({
+  vegetarian: t("dietary.vegetarian"),
+  vegan: t("dietary.vegan"),
+  "low-carb": t("dietary.low-carb"),
+  "gluten-free": t("dietary.gluten-free"),
+  keto: t("dietary.keto"),
+  pescatarian: t("dietary.pescatarian"),
+});
 
 const AllergenValues = [
   "shellfish",
@@ -63,18 +64,19 @@ const AllergenValues = [
   "mustard",
 ] as const;
 
-const AllergenLabels = {
-  shellfish: "Hải sản có vỏ",
-  dairy: "Sữa/Bơ sữa",
-  peanuts: "Đậu phộng",
-  "tree-nuts": "Các loại hạt",
-  gluten: "Gluten",
-  soy: "Đậu nành",
-  eggs: "Trứng",
-  fish: "Cá",
-  sesame: "Mè",
-  mustard: "Mù tạt",
-};
+// Sử dụng i18n cho label dị ứng thực phẩm
+const AllergenLabels = (t: any) => ({
+  shellfish: t("allergen.shellfish"),
+  dairy: t("allergen.dairy"),
+  peanuts: t("allergen.peanuts"),
+  "tree-nuts": t("allergen.tree-nuts"),
+  gluten: t("allergen.gluten"),
+  soy: t("allergen.soy"),
+  eggs: t("allergen.eggs"),
+  fish: t("allergen.fish"),
+  sesame: t("allergen.sesame"),
+  mustard: t("allergen.mustard"),
+});
 
 export default function GuestLoginForm() {
   const setSocket = useAppStore((state) => state.setSocket);
@@ -175,10 +177,8 @@ export default function GuestLoginForm() {
 
               <FormItem>
                 <div className="mb-3">
-                  <FormLabel className="text-base">Sở thích ăn uống (tùy chọn)</FormLabel>
-                  <p className="text-sm text-muted-foreground">
-                    Chọn các món ăn bạn ưa thích để được tư vấn phù hợp
-                  </p>
+                  <FormLabel className="text-base">{t("dietaryPreferencesLabel")}</FormLabel>
+                  <p className="text-sm text-muted-foreground">{t("dietaryPreferencesDesc")}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {DietaryPreferenceValues.map((item) => (
@@ -187,6 +187,7 @@ export default function GuestLoginForm() {
                       control={form.control}
                       name="dietaryPreferences"
                       render={({ field }) => {
+                        const labels = DietaryPreferenceLabels(t);
                         return (
                           <FormItem key={item} className="flex flex-row items-start space-x-3 space-y-0">
                             <FormControl>
@@ -201,9 +202,7 @@ export default function GuestLoginForm() {
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className="font-normal cursor-pointer">
-                              {DietaryPreferenceLabels[item]}
-                            </FormLabel>
+                            <FormLabel className="font-normal cursor-pointer">{labels[item]}</FormLabel>
                           </FormItem>
                         );
                       }}
@@ -216,10 +215,8 @@ export default function GuestLoginForm() {
               {/* Allergy Info - Multi Checkbox */}
               <FormItem>
                 <div className="mb-3">
-                  <FormLabel className="text-base">Dị ứng thực phẩm (tùy chọn)</FormLabel>
-                  <p className="text-sm text-muted-foreground">
-                    Chọn các thực phẩm bạn dị ứng để tránh trong món ăn
-                  </p>
+                  <FormLabel className="text-base">{t("allergyInfoLabel")}</FormLabel>
+                  <p className="text-sm text-muted-foreground">{t("allergyInfoDesc")}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {AllergenValues.map((item) => (
@@ -228,6 +225,7 @@ export default function GuestLoginForm() {
                       control={form.control}
                       name="allergyInfo"
                       render={({ field }) => {
+                        const labels = AllergenLabels(t);
                         return (
                           <FormItem key={item} className="flex flex-row items-start space-x-3 space-y-0">
                             <FormControl>
@@ -242,9 +240,7 @@ export default function GuestLoginForm() {
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className="font-normal cursor-pointer">
-                              {AllergenLabels[item]}
-                            </FormLabel>
+                            <FormLabel className="font-normal cursor-pointer">{labels[item]}</FormLabel>
                           </FormItem>
                         );
                       }}

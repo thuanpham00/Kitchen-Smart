@@ -40,6 +40,7 @@ import {
 import { useDeleteSupplierMutation, useGetListSupplierQuery } from "@/queries/useSupplier";
 import EditSupplier from "@/app/[locale]/manage/suppliers/edit-supplier";
 import DialogShowSupplyBySupplier from "@/app/[locale]/manage/suppliers/show-supply.dialog";
+import useSearchForm from "@/hooks/useSearchForm";
 
 type SupplierItem = SupplierListResType["data"][0];
 
@@ -247,24 +248,7 @@ export default function SupplierTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, status: undefined, name: undefined })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset();
-    router.push(`/manage/suppliers?${params.toString()}`);
-  };
-
-  const submit = (data: SearchSupplierType) => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, name: data.name, status: data.status })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/suppliers?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/suppliers");
 
   const [supplierIdEdit, setSupplierIdEdit] = useState<number | undefined>();
   const [supplierDelete, setSupplierDelete] = useState<SupplierItem | null>(null);

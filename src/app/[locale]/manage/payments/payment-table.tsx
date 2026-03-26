@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTranslations } from "next-intl";
 import PaymentItem, { getGroupColor } from "@/app/[locale]/manage/payments/payment-item";
 import { formatCurrency } from "@/lib/utils";
+import useSearchForm from "@/hooks/useSearchForm";
 
 export type PaymentItemType = PaymentListResType["data"][0];
 
@@ -68,38 +69,7 @@ export default function PaymentTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({
-        page: 1,
-        limit: queryConfig.limit,
-        fromDate: undefined,
-        toDate: undefined,
-        paymentMethod: undefined,
-        numberTable: undefined,
-      })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset({ fromDate: undefined, toDate: undefined, paymentMethod: undefined, numberTable: undefined });
-    router.push(`/manage/payments?${params.toString()}`);
-  };
-
-  const submit = (data: SearchPaymentType) => {
-    const params = new URLSearchParams(
-      Object.entries({
-        ...queryConfig,
-        page: 1,
-        fromDate: data.fromDate ? new Date(data.fromDate).toISOString() : undefined,
-        toDate: data.toDate ? new Date(data.toDate).toISOString() : undefined,
-        paymentMethod: data.paymentMethod ? data.paymentMethod : undefined,
-        numberTable: data.numberTable ? data.numberTable : undefined,
-      })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/payments?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/payments");
 
   const invalidSubmit = (err: FieldErrors<SearchPaymentType>) => {
     console.log(err);
@@ -197,7 +167,11 @@ export default function PaymentTable() {
                   <FormItem>
                     <div className="flex items-center">
                       <span className="mr-2 text-sm">{t("paymentMethodLabel")}</span>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value || ""}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder={t("chooseOption")} />

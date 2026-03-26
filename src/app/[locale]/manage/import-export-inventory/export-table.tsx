@@ -11,7 +11,6 @@ import AutoPagination from "@/components/auto-pagination";
 import { Eye, RefreshCcw, Search, X } from "lucide-react";
 import useQueryParams from "@/hooks/useQueryParams";
 import { isUndefined, omitBy } from "lodash";
-import { useRouter } from "@/i18n/routing";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem } from "@/components/ui/form";
@@ -26,6 +25,8 @@ import { useGetListExportReceiptQuery } from "@/queries/useExportReceipt";
 import { format } from "date-fns";
 import ListExportReceiptItemDialog from "@/app/[locale]/manage/import-export-inventory/list-export-receipt-item-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import useSearchForm from "@/hooks/useSearchForm";
+import { toast } from "sonner";
 
 type ExportReceiptItem = ExportReceiptListResType["data"][0];
 
@@ -134,7 +135,6 @@ export const getColumns = (t: any): ColumnDef<ExportReceiptItem>[] => [
 export default function ExportTable() {
   const t = useTranslations("ManageExportReceipts");
   const columns = getColumns(t);
-  const router = useRouter();
   const queryParams = useQueryParams();
 
   const limit = queryParams.limit ? Number(queryParams.limit) : 10;
@@ -160,24 +160,7 @@ export default function ExportTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, fromDate: undefined, toDate: undefined })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset();
-    router.push(`/manage/import-export-inventory?${params.toString()}`);
-  };
-
-  const submit = (data: SearchExportReceiptType) => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, fromDate: data.fromDate, toDate: data.toDate })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/import-export-inventory?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/import-export-inventory");
 
   const [exportReceiptIdViewItems, setExportReceiptIdViewItems] = useState<number | undefined>();
 
@@ -227,6 +210,9 @@ export default function ExportTable() {
                   onReset={reset}
                   onSubmit={form.handleSubmit(submit, (err) => {
                     console.log(err);
+                    if (err.fromDate) {
+                      toast.error(t(err.fromDate.message as string));
+                    }
                   })}
                 >
                   <div className="flex items-center gap-4">

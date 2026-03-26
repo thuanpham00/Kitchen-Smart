@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/incompatible-library */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { createContext, useContext, useState } from "react";
 import AutoPagination from "@/components/auto-pagination";
 import { Eye, PlusCircle, RefreshCcw, Search, X } from "lucide-react";
 import useQueryParams from "@/hooks/useQueryParams";
@@ -36,6 +34,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGetSupplierOptionQuery } from "@/queries/useSupplier";
+import { toast } from "sonner";
+import useSearchForm from "@/hooks/useSearchForm";
 
 type ImportReceiptItem = GetImportReceiptListResType["data"][0];
 
@@ -121,7 +121,6 @@ export const getColumns = (t: any): ColumnDef<ImportReceiptItem>[] => [
 export default function ImportTable() {
   const t = useTranslations("ManageImportReceipts");
   const columns = getColumns(t);
-  const router = useRouter();
   const queryParams = useQueryParams();
 
   const limit = queryParams.limit ? Number(queryParams.limit) : 10;
@@ -141,7 +140,7 @@ export default function ImportTable() {
     isUndefined,
   ) as ImportReceiptQueryType;
 
-  const {data: listImportReceipt, refetch} = useGetListImportReceiptQuery(queryConfig);
+  const { data: listImportReceipt, refetch } = useGetListImportReceiptQuery(queryConfig);
 
   const data: GetImportReceiptListResType["data"] = listImportReceipt?.payload.data || [];
   const currentPage = listImportReceipt?.payload.pagination.page || 0; // trang hiện tại
@@ -178,42 +177,7 @@ export default function ImportTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({
-        ...queryConfig,
-        fromDate: undefined,
-        toDate: undefined,
-        status: undefined,
-        supplierId: undefined,
-      })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset({
-      fromDate: undefined,
-      toDate: undefined,
-      status: "",
-      supplierId: "",
-    });
-    router.push(`/manage/import-export-inventory?${params.toString()}`);
-  };
-
-  const submit = (data: SearchImportReceiptType) => {
-    const params = new URLSearchParams(
-      Object.entries({
-        ...queryConfig,
-        page: 1,
-        fromDate: data.fromDate,
-        toDate: data.toDate,
-        status: data.status,
-        supplierId: data.supplierId,
-      })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/import-export-inventory?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/import-export-inventory");
 
   return (
     <div>
@@ -232,6 +196,9 @@ export default function ImportTable() {
                   onReset={reset}
                   onSubmit={form.handleSubmit(submit, (err) => {
                     console.log(err);
+                    if (err.fromDate) {
+                      toast.error(t(err.fromDate.message as string));
+                    }
                   })}
                 >
                   <div>

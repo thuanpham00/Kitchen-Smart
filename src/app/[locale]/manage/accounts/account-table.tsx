@@ -38,6 +38,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem } from "@/components/ui/form";
 import { RefreshCcw, Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import useSearchForm from "@/hooks/useSearchForm";
 
 type AccountItem = AccountListResType["data"][0];
 
@@ -177,7 +178,6 @@ function AlertDialogDeleteAccount({
 
 export default function AccountTable() {
   const t = useTranslations("ManageAccounts");
-  const router = useRouter();
   const queryParams = useQueryParams();
   const columns = getColumns(t);
 
@@ -200,24 +200,8 @@ export default function AccountTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, email: undefined })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset();
-    router.push(`/manage/accounts?${params.toString()}`);
-  };
-
-  const submit = (data: SearchAccountType) => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, email: data.email })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/accounts?${params.toString()}`);
-  };
+  // Sử dụng custom hook cho logic reset & submit
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/accounts");
 
   const [employeeIdEdit, setEmployeeIdEdit] = useState<number | undefined>();
   const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(null);

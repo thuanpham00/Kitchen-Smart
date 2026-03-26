@@ -37,6 +37,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem } from "@/components/ui/form";
 import { useTranslations } from "next-intl";
+import useSearchForm from "@/hooks/useSearchForm";
 
 type DishCategoryItem = DishCategoryListResType["data"][0];
 
@@ -188,24 +189,7 @@ export default function DishCategoryTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, name: undefined })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset();
-    router.push(`/manage/categories?${params.toString()}`);
-  };
-
-  const submit = (data: SearchCategoryDishType) => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, name: data.name })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/categories?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/categories");
 
   const [dishCategoryIdEdit, setDishCategoryIdEdit] = useState<number | undefined>();
   const [dishCategoryDelete, setDishCategoryDelete] = useState<DishCategoryItem | null>(null);

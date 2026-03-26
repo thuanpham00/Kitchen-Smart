@@ -46,6 +46,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import useSearchForm from "@/hooks/useSearchForm";
 
 type TableItem = TableListResType["data"][0];
 
@@ -154,24 +155,7 @@ export default function TableTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, number: undefined, status: undefined })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset();
-    router.push(`/manage/tables?${params.toString()}`);
-  };
-
-  const submit = (data: SearchTableType) => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, number: data.number, status: data.status })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/tables?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/tables");
 
   const [tableIdEdit, setTableIdEdit] = useState<number | undefined>();
   const [tableDelete, setTableDelete] = useState<TableItem | null>(null);

@@ -66,7 +66,31 @@
     "title": "Login to order",
     "nameGuest": "Guest name",
     "buttonLogin": "Login",
-    "description": "Enter login information to place an order"
+    "description": "Enter login information to place an order",
+    "dietaryPreferencesLabel": "Dietary preferences (optional)",
+    "dietaryPreferencesDesc": "Select your preferred foods for better recommendations",
+    "allergyInfoLabel": "Food allergies (optional)",
+    "allergyInfoDesc": "Select foods you are allergic to so we can avoid them in your dishes",
+    "dietary": {
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan",
+      "low-carb": "Low-carb",
+      "gluten-free": "Gluten-free",
+      "keto": "Keto",
+      "pescatarian": "Pescatarian"
+    },
+    "allergen": {
+      "shellfish": "Shellfish",
+      "dairy": "Dairy",
+      "peanuts": "Peanuts",
+      "tree-nuts": "Tree nuts",
+      "gluten": "Gluten",
+      "soy": "Soy",
+      "eggs": "Eggs",
+      "fish": "Fish",
+      "sesame": "Sesame",
+      "mustard": "Mustard"
+    }
   },
   "GuestMenu": {
     "title": "Menu",
@@ -195,7 +219,8 @@
     "batchNumber": "Batch Number",
     "note": "Note",
     "noItems": "No items found",
-    "close": "Close"
+    "close": "Close",
+    "validFromDate": "From date must be less than or equal to To date"
   },
   "ManageImportReceipts": {
     "title": "Import Receipts",
@@ -270,7 +295,9 @@
     "subtotal": "Subtotal",
     "enterQuantity": "Enter quantity",
     "enterUnitPrice": "Enter unit price",
-    "unitRequired": "Unit is required"
+    "unitRequired": "Unit is required",
+    "importDateRequired": "Import date is required",
+    "validFromDate": "From date must be less than or equal to To date"
   },
   "ManageDishes": {
     "title": "Dishes",
@@ -680,7 +707,12 @@
     "tableSessionEmpty": "Empty",
     "tableSessionServing": "Serving",
     "note": "Note",
-    "capacity": "Capacity"
+    "capacity": "Capacity",
+    "orderStatusDelivery": "Delivered",
+    "orderStatusPaid": "Paid",
+    "orderStatusPending": "Pending",
+    "orderStatusProcessing": "Processing",
+    "orderStatusRejected": "Rejected"
   },
   "ManageDashboard": {
     "title": "Dashboard",
@@ -1192,7 +1224,12 @@
     "Delivered": "Delivered",
     "Paid": "Paid",
     "Rejected": "Rejected",
-    "note": "Note"
+    "note": "Note",
+    "orderStatusDelivery": "Delivered",
+    "orderStatusPaid": "Paid",
+    "orderStatusPending": "Pending",
+    "orderStatusProcessing": "Processing",
+    "orderStatusRejected": "Rejected"
   },
   "GuestHistoryPayment": {
     "title": "Payment History",

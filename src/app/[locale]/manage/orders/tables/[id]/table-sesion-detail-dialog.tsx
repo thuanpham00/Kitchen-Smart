@@ -64,7 +64,6 @@ const getPaymentMethodBadge = (method: string, t: (key: string) => string) => {
 
 // Helper function để format payment status
 const getPaymentStatusBadge = (status: string, t: (key: string) => string) => {
-
   switch (status) {
     case "Paid":
       return <Badge className="bg-green-500 text-white">{t("paymentSuccess")}</Badge>;
@@ -284,6 +283,7 @@ export default function TableSessionDetailDialog() {
                               <Badge variant="outline">
                                 {getVietnameseOrderStatus(
                                   order.status as (typeof OrderStatus)[keyof typeof OrderStatus],
+                                  t,
                                 )}
                               </Badge>
                             </TableCell>

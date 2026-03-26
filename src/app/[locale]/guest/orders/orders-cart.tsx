@@ -108,7 +108,7 @@ export default function OrdersCart() {
       } = data;
 
       toast.success(
-        `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái ${getVietnameseOrderStatus(status)}`,
+        `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái ${getVietnameseOrderStatus(status, t)}`,
         { duration: 4000 },
       );
       refetch();
@@ -154,7 +154,7 @@ export default function OrdersCart() {
       socket?.off("payment-completed", onPaymentCompleted);
       socket?.off("payment-group-completed", onPaymentCompleted);
     };
-  }, [refetch, socket, queryClient]);
+  }, [refetch, socket, queryClient, t]);
 
   return (
     <div className="space-y-4">

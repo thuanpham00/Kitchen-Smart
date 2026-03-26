@@ -396,12 +396,16 @@ export default function OrderGuestSummary({ guest, orders }: { guest: Guest; ord
         <div className="space-y-1">
           <div className="text-xs text-muted-foreground">{t("totalUnpaid")}</div>
           <div className="text-lg font-bold text-orange-600">{formatCurrency(totalUnpaid)}</div>
-          <div className="text-xs text-muted-foreground">{ordersFilterToPurchase.length} {t("order")}</div>
+          <div className="text-xs text-muted-foreground">
+            {ordersFilterToPurchase.length} {t("order")}
+          </div>
         </div>
         <div className="space-y-1">
           <div className="text-xs text-muted-foreground">{t("totalPaid")}</div>
           <div className="text-lg font-bold text-green-600">{formatCurrency(totalPaid)}</div>
-          <div className="text-xs text-muted-foreground">{purchasedOrderFilter.length} {t("order")}</div>
+          <div className="text-xs text-muted-foreground">
+            {purchasedOrderFilter.length} {t("order")}
+          </div>
         </div>
       </div>
 
@@ -433,8 +437,8 @@ export default function OrderGuestSummary({ guest, orders }: { guest: Guest; ord
           <DialogHeader>
             <DialogTitle>{t("invoiceTitle")}</DialogTitle>
             <DialogDescription>
-              {t("customerLabel")} <span className="font-semibold">{guest?.name}</span> - {t("tableNumberLabel")}{" "}
-              <span className="font-semibold">{guest?.tableNumber}</span>
+              {t("customerLabel")} <span className="font-semibold">{guest?.name}</span> -{" "}
+              {t("tableNumberLabel")} <span className="font-semibold">{guest?.tableNumber}</span>
             </DialogDescription>
           </DialogHeader>
 
@@ -471,7 +475,9 @@ export default function OrderGuestSummary({ guest, orders }: { guest: Guest; ord
               <Separator />
 
               <div className="space-y-2">
-                <div className="font-semibold text-sm">{t("dishDetails", { count: ordersFilterToPurchase.length })}</div>
+                <div className="font-semibold text-sm">
+                  {t("dishDetails", { count: ordersFilterToPurchase.length })}
+                </div>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {ordersFilterToPurchase.map((order, index) => (
                     <div
@@ -486,7 +492,7 @@ export default function OrderGuestSummary({ guest, orders }: { guest: Guest; ord
                             variant="outline"
                             className="text-xs bg-green-100 text-green-800 border-green-300"
                           >
-                            {getVietnameseOrderStatus(order.status)}
+                            {getVietnameseOrderStatus(order.status, t)}
                           </Badge>
                         </div>
                         <div className="flex justify-between items-center text-xs">
@@ -665,9 +671,7 @@ export default function OrderGuestSummary({ guest, orders }: { guest: Guest; ord
       >
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">
-              {t("bankTransferGuide")}
-            </DialogTitle>
+            <DialogTitle className="text-center text-xl">{t("bankTransferGuide")}</DialogTitle>
           </DialogHeader>
 
           {paymentExists && (
@@ -768,9 +772,7 @@ export default function OrderGuestSummary({ guest, orders }: { guest: Guest; ord
               {paymentExists.bankInfo && (
                 <div className="space-y-4 pl-6">
                   <div className="text-center">
-                    <div className="font-semibold text-base mb-4">
-                      {t("manualMethod")}
-                    </div>
+                    <div className="font-semibold text-base mb-4">{t("manualMethod")}</div>
                   </div>
 
                   {/* Bank Logo */}
@@ -812,7 +814,8 @@ export default function OrderGuestSummary({ guest, orders }: { guest: Guest; ord
                       <span className="font-semibold shrink-0">{t("bankNotice")}</span>
                       <span>
                         {t("bankNoticeText1")}{" "}
-                        <span className="font-bold">{paymentExists.bankInfo.content}</span> {t("bankNoticeText2")}
+                        <span className="font-bold">{paymentExists.bankInfo.content}</span>{" "}
+                        {t("bankNoticeText2")}
                       </span>
                     </div>
                   </div>

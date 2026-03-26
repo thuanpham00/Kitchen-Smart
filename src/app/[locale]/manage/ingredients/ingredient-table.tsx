@@ -41,6 +41,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField, FormItem } from "@/components/ui/form";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
+import useSearchForm from "@/hooks/useSearchForm";
 
 type IngredientItem = IngredientListResType["data"][0];
 
@@ -282,24 +283,7 @@ export default function IngredientTable() {
     },
   });
 
-  const reset = () => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, category: undefined, name: undefined, unit: undefined })
-        .filter(([key, value]) => value !== undefined)
-        .map(([key, value]) => [key, String(value)]),
-    );
-    form.reset();
-    router.push(`/manage/ingredients?${params.toString()}`);
-  };
-
-  const submit = (data: SearchIngredientType) => {
-    const params = new URLSearchParams(
-      Object.entries({ ...queryConfig, page: 1, name: data.name, category: data.category, unit: data.unit })
-        .filter(([key, value]) => value !== undefined && value !== "")
-        .map(([key, value]) => [key, String(value)]),
-    );
-    router.push(`/manage/ingredients?${params.toString()}`);
-  };
+  const { reset, submit } = useSearchForm(form, queryConfig, "/manage/ingredients");
 
   const [ingredientIdEdit, setIngredientIdEdit] = useState<number | undefined>();
   const [ingredientDelete, setIngredientDelete] = useState<IngredientItem | null>(null);

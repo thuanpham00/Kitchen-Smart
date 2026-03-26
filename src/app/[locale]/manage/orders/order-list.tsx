@@ -233,7 +233,7 @@ const getColumns = (t: any) => {
                 // nếu "Đã phục vụ thì cho phép "Thanh toán"
                 return (
                   <SelectItem key={key} value={key} disabled={status}>
-                    {getVietnameseOrderStatus(key as (typeof OrderStatusValues)[number])}
+                    {getVietnameseOrderStatus(key as (typeof OrderStatusValues)[number], t)}
                   </SelectItem>
                 );
               })}
@@ -432,7 +432,7 @@ export default function OrderList({
       } = data;
 
       toast.success(
-        `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái ${getVietnameseOrderStatus(status)}`,
+        `Món ${name} (SL: ${quantity}) vừa được cập nhật sang trạng thái ${getVietnameseOrderStatus(status, t)}`,
         { duration: 4000 },
       );
       refetchList();
@@ -469,7 +469,7 @@ export default function OrderList({
       socket?.off("new-order", onNewOrder);
       socket?.off("payment", onPayment);
     };
-  }, [refetch, fromDate, toDate, socket]);
+  }, [refetch, fromDate, toDate, socket, t]);
 
   return (
     <Card x-chunk="dashboard-06-chunk-0">
@@ -532,6 +532,7 @@ export default function OrderList({
                       {table.getColumn("status")?.getFilterValue()
                         ? getVietnameseOrderStatus(
                             table.getColumn("status")?.getFilterValue() as (typeof OrderStatusValues)[number],
+                            t,
                           )
                         : t("statusFilter")}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -564,7 +565,7 @@ export default function OrderList({
                                     : "opacity-0",
                                 )}
                               />
-                              {getVietnameseOrderStatus(status)}
+                              {getVietnameseOrderStatus(status, t)}
                             </CommandItem>
                           ))}
                         </CommandList>

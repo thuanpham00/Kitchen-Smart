@@ -2,9 +2,7 @@
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { Navigation, Autoplay } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { ChevronRight, ChevronLeft, Flame, Sparkles, Star } from "lucide-react";
+import { ChevronRight, Flame, Sparkles, Star } from "lucide-react";
 import Image from "next/image";
 import { formatCurrency, generateSlugUrl } from "@/lib/utils";
 import { Link } from "@/i18n/routing";
@@ -13,7 +11,7 @@ import { useTranslations } from "next-intl";
 
 export default function PopularDishes({ data }: { data: DishSuggestList }) {
   const t = useTranslations("HomePage");
-  const t2= useTranslations("Others");
+  const t2 = useTranslations("Others");
 
   return (
     <section className="py-16 md:py-12 px-4 sm:px-6 lg:px-33.75">
@@ -37,93 +35,65 @@ export default function PopularDishes({ data }: { data: DishSuggestList }) {
 
       <div className="mt-3 relative">
         {data.length > 0 ? (
-          <div className="relative">
-            <Swiper
-              modules={[Navigation, Autoplay]}
-              spaceBetween={20}
-              loop={true}
-              autoplay={{ delay: 3000, disableOnInteraction: false }}
-              navigation={{
-                nextEl: ".custom-next",
-                prevEl: ".custom-prev",
-              }}
-              breakpoints={{
-                320: { slidesPerView: 1 },
-                480: { slidesPerView: 2 },
-                768: { slidesPerView: 3 },
-                1024: { slidesPerView: 3 },
-                1280: { slidesPerView: 4 },
-              }}
-              className="mySwiper relative"
-            >
-              {data.map((dish, index) => (
-                <SwiperSlide key={dish.id}>
-                  <div
-                    className="group relative backdrop-blur-sm rounded-2xl overflow-hidden transition-all duration-500 bg-background dark:bg-border border-2 border-border hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-2"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+            {data.map((dish, index) => (
+              <div
+                className="group relative backdrop-blur-sm rounded-2xl overflow-hidden transition-all duration-500 bg-background dark:bg-border border-2 border-border hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-2"
+                style={{ animationDelay: `${index * 100}ms` }}
+                key={dish.id}
+              >
+                {/* Glow effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                    {/* Image */}
-                    <div className="relative h-62 sm:h-46 lg:h-54 xl:h-72 overflow-hidden">
-                      <div className="absolute inset-0 z-9" />
-                      <Image
-                        src={dish.dish.image}
-                        alt={dish.dish.name}
-                        width={500}
-                        height={450}
-                        className="w-full h-full object-fill group-hover:scale-110 transition-transform duration-700"
-                      />
+                {/* Image */}
+                <div className="relative h-66 sm:h-46 lg:h-48 xl:h-80 overflow-hidden">
+                  <div className="absolute inset-0 z-9" />
+                  <Image
+                    src={dish.dish.image}
+                    alt={dish.dish.name}
+                    width={500}
+                    height={450}
+                    className="w-full h-full object-fill group-hover:scale-110 transition-transform duration-700"
+                  />
 
-                      {/* Popular Badge */}
-                      <div className="absolute top-4 right-4 z-20">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/90 backdrop-blur-sm rounded-full border border-orange-400/50 shadow-lg">
-                          <Star className="w-4 h-4 text-white fill-white" />
-                          <span className="text-white font-semibold text-xs">Hot</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="relative p-4">
-                      <h3 className="text-orange-400 dark:text-orange-400 text-xl font-bold mb-3 line-clamp-1 transition-colors duration-300">
-                        {dish.dish.name}
-                      </h3>
-
-                      <p className="text-black dark:text-gray-100 text-sm line-clamp-2 leading-relaxed h-14">
-                        {dish.dish.description || "Món ăn đặc biệt với hương vị tuyệt vời"}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        <div className="text-xl font-bold text-gray-800 dark:text-white rounded-lg">
-                          {formatCurrency(dish.price)}
-                        </div>
-
-                        {/* Action Button */}
-                        <Link
-                          href={`/dishes/${generateSlugUrl({
-                            name: dish.dish.name,
-                            id: dish.id,
-                          })}`}
-                          className="text-gray-600 dark:text-white text-sm hover:underline transition-all duration-300 group/btn block"
-                        >
-                          <span>{t2("seenDetail")}</span>
-                        </Link>
-                      </div>
+                  {/* Popular Badge */}
+                  <div className="absolute top-4 right-4 z-20">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/90 backdrop-blur-sm rounded-full border border-orange-400/50 shadow-lg">
+                      <Star className="w-4 h-4 text-white fill-white" />
+                      <span className="text-white font-semibold text-xs">Hot</span>
                     </div>
                   </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
+                </div>
 
-            <button className="custom-prev">
-              <ChevronLeft />
-            </button>
+                {/* Content */}
+                <div className="relative p-4">
+                  <h3 className="text-orange-400 dark:text-orange-400 text-xl font-bold mb-3 line-clamp-1 transition-colors duration-300">
+                    {dish.dish.name}
+                  </h3>
 
-            <button className="custom-next">
-              <ChevronRight />
-            </button>
+                  <p className="text-black dark:text-gray-100 text-sm line-clamp-2 leading-relaxed h-12">
+                    {dish.dish.description || "Món ăn đặc biệt với hương vị tuyệt vời"}
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <div className="text-xl font-bold text-gray-800 dark:text-white rounded-lg">
+                      {formatCurrency(dish.price)}
+                    </div>
+
+                    {/* Action Button */}
+                    <Link
+                      href={`/dishes/${generateSlugUrl({
+                        name: dish.dish.name,
+                        id: dish.id,
+                      })}`}
+                      className="text-gray-600 dark:text-white text-sm hover:underline transition-all duration-300 group/btn block"
+                    >
+                      <span>{t2("seenDetail")}</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="text-center py-20">

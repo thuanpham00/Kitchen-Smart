@@ -41,7 +41,6 @@ export const PaymentTableContext = createContext<{
 export default function PaymentTable() {
   const t = useTranslations("ManagePayments");
 
-  const router = useRouter();
   const queryParams = useQueryParams();
 
   const limit = queryParams.limit ? Number(queryParams.limit) : 10;
@@ -236,33 +235,40 @@ export default function PaymentTable() {
           </div>
 
           {data.length > 0 &&
-            Object.entries(paymentGroups).map(([groupId, payments]) => {
-              const totalAmountGroup = payments.reduce((acc, payment) => acc + payment.totalAmount, 0);
-              return (
-                <div key={groupId}>
-                  {groupId !== "no-group" && (
-                    <div
-                      className={`grid grid-cols-10 gap-2 items-center pl-2 py-2 border-l-4 ${getGroupColor(Number(groupId))}`}
-                    >
-                      <div className="col-span-1 text-sm">{t("billGroup", { id: groupId })}</div>
-                      <div className="col-span-1 text-sm"> </div>
-                      <div className="col-span-1 text-sm font-semibold text-orange-600">
-                        {formatCurrency(totalAmountGroup)}
+            Object.entries(paymentGroups)
+              .sort(([, paymentsA], [, paymentsB]) => {
+                const maxA = Math.max(...paymentsA.map((p) => new Date(p.createdAt).getTime()));
+                // lấy time tạo lớn nhất trong 1 group để sort các group
+                const maxB = Math.max(...paymentsB.map((p) => new Date(p.createdAt).getTime()));
+                return maxB - maxA; // mới nhất lên đầu
+              })
+              .map(([groupId, payments]) => {
+                const totalAmountGroup = payments.reduce((acc, payment) => acc + payment.totalAmount, 0);
+                return (
+                  <div key={groupId}>
+                    {groupId !== "no-group" && (
+                      <div
+                        className={`grid grid-cols-10 gap-2 items-center pl-2 py-2 border-l-4 ${getGroupColor(Number(groupId))}`}
+                      >
+                        <div className="col-span-1 text-sm">{t("billGroup", { id: groupId })}</div>
+                        <div className="col-span-1 text-sm"> </div>
+                        <div className="col-span-1 text-sm font-semibold text-orange-600">
+                          {formatCurrency(totalAmountGroup)}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {payments.map((payment: PaymentItemType, index: number) => (
-                    <PaymentItem
-                      data={payment}
-                      paymentGroups={paymentGroups}
-                      key={payment.id}
-                      indexForGroup={index + 1}
-                    />
-                  ))}
-                </div>
-              );
-            })}
+                    {payments.map((payment: PaymentItemType, index: number) => (
+                      <PaymentItem
+                        data={payment}
+                        paymentGroups={paymentGroups}
+                        key={payment.id}
+                        indexForGroup={index + 1}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
           <div className="text-xs text-muted-foreground py-4 flex-1 ">

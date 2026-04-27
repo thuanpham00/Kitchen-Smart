@@ -377,7 +377,7 @@ export default function InventoryStockTable() {
           </Form>
           <div>
             <Button variant="outline" className="bg-red-500! hover:bg-red-600!" onClick={() => refetch()}>
-              <RefreshCcw />
+              <RefreshCcw color="white" />
             </Button>
           </div>
         </div>

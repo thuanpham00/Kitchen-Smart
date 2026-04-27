@@ -53,9 +53,9 @@ export default function NavLinks() {
                     <Link
                       href={Item.href}
                       className={cn(
-                        "flex items-center justify-start gap-2 p-2 pl-4 rounded-lg transition-colors hover:text-foreground md:h-8 md:w-full relative font-medium",
+                        "flex items-center justify-start gap-2 p-2 pl-4 rounded-lg transition-colors hover:text-foreground md:h-8 md:w-full relative font-normal",
                         {
-                          "bg-accent text-accent-foreground": isActive,
+                          "bg-accent text-orange-500 font-medium": isActive,
                           "text-muted-foreground": !isActive,
                         },
                       )}

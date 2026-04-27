@@ -41,7 +41,7 @@ export default function ChatbotTable() {
     <div>
       <div className="mb-4 flex justify-end">
         <Button variant="outline" className="bg-red-500! hover:bg-red-600!" onClick={() => refetch()}>
-          <RefreshCcw />
+          <RefreshCcw color="white" />
         </Button>
       </div>
       <div className="flex gap-6">

@@ -21,7 +21,7 @@ export const getGroupColor = (groupId: number) => {
   return colors[groupId % colors.length];
 };
 
-const getPaymentMethodLabel = (method: string, t: any) => {
+export const getPaymentMethodLabel = (method: string, t: any) => {
   switch (method) {
     case "CASH":
       return `${t("cash")}`;
@@ -32,7 +32,7 @@ const getPaymentMethodLabel = (method: string, t: any) => {
   }
 };
 
-const getVietnamesePaymentStatus = (status: string, t: any) => {
+export const getVietnamesePaymentStatus = (status: string, t: any) => {
   switch (status) {
     case "Paid":
       return t("paid");
@@ -47,7 +47,7 @@ const getVietnamesePaymentStatus = (status: string, t: any) => {
   }
 };
 
-const getPaymentStatusColor = (status: string) => {
+export const getPaymentStatusColor = (status: string) => {
   switch (status) {
     case "Paid":
       return "bg-green-100 text-green-800 border-green-300";

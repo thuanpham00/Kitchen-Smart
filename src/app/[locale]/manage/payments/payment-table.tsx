@@ -18,16 +18,33 @@ import { format } from "date-fns";
 import { RefreshCcw, Search } from "lucide-react";
 import { FieldErrors, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "@/i18n/routing";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslations } from "next-intl";
-import PaymentItem, { getGroupColor } from "@/app/[locale]/manage/payments/payment-item";
-import { formatCurrency } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import {
+  getGroupColor,
+  getPaymentMethodLabel,
+  getPaymentStatusColor,
+  getVietnamesePaymentStatus,
+} from "@/app/[locale]/manage/payments/payment-item";
+import { formatCurrency, formatDateTimeToLocaleString } from "@/lib/utils";
 import useSearchForm from "@/hooks/useSearchForm";
+import { Table } from "antd";
 
 export type PaymentItemType = PaymentListResType["data"][0];
+
+type PaymentRow = {
+  key: string;
+  type: "group" | "item";
+  groupId?: string;
+  totalAmountGroup?: number;
+  payment?: PaymentItemType;
+  indexForGroup?: number;
+  isGrouped?: boolean;
+  groupColor?: string;
+};
 
 // sử dụng trong phạm vị component AccountTable và các component con của nó
 export const PaymentTableContext = createContext<{
@@ -86,7 +103,7 @@ export default function PaymentTable() {
 
   const [paymentIdEdit, setPaymentIdEdit] = useState<number | undefined>();
 
-  const { data: listPayment, refetch } = useGetListPaymentQuery(queryConfig);
+  const { data: listPayment, refetch, isFetching } = useGetListPaymentQuery(queryConfig);
 
   const data: PaymentListResType["data"] = listPayment?.payload.data || [];
   const currentPage = (listPayment?.payload.pagination && listPayment?.payload.pagination.page) || 0;
@@ -212,7 +229,7 @@ export default function PaymentTable() {
                   <Search color="white" />
                 </Button>
                 <Button variant="outline" className="bg-red-500! hover:bg-red-600!" onClick={() => refetch()}>
-                  <RefreshCcw />
+                  <RefreshCcw color="white"/>
                 </Button>
               </div>
             </div>
@@ -221,54 +238,246 @@ export default function PaymentTable() {
         <div className="rounded-md border">
           <FormPaymentDetail id={paymentIdEdit} setId={setPaymentIdEdit} />
 
-          <div className="grid grid-cols-10 gap-2 items-center justify-start p-2 text-sm">
-            <div className="col-span-1">Type</div>
-            <div className="col-span-1">{t("tableGuest")}</div>
-            <div className="col-span-1">{t("totalAmount")}</div>
-            <div className="col-span-1">{t("paymentMethod")}</div>
-            <div className="col-span-1">{t("status")}</div>
-            <div className="col-span-1">{t("orders")}</div>
-            <div className="col-span-1">{t("createdBy")}</div>
-            <div className="col-span-1">{t("createdAt")}</div>
-            <div className="col-span-1">{t("note")}</div>
-            <div className="col-span-1">{t("actions")}</div>
-          </div>
-
-          {data.length > 0 &&
-            Object.entries(paymentGroups)
+          <Table<PaymentRow>
+            bordered
+            pagination={false}
+            loading={isFetching}
+            rowClassName={(record) => {
+              if (record.type === "group" && record.groupId) {
+                return `border-l-4 ${getGroupColor(Number(record.groupId))}`;
+              }
+              if (record.type === "item" && record.isGrouped && record.groupColor) {
+                return `border-l-4 ${record.groupColor}`;
+              }
+              return "";
+            }}
+            columns={[
+              {
+                title: "Type",
+                key: "type",
+                render: (_, record) => {
+                  if (record.type === "group") {
+                    return (
+                      <span className="text-sm">{t("billGroup", { id: record.groupId as string })}</span>
+                    );
+                  }
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  if (record.isGrouped) {
+                    return (
+                      <Badge variant="outline" className="text-xs">
+                        {record.indexForGroup}
+                      </Badge>
+                    );
+                  }
+                  return (
+                    <Badge variant="outline" className="text-xs">
+                      {t("billInvidiual", { id: payment.id })}
+                    </Badge>
+                  );
+                },
+                onCell: (record) => (record.type === "group" ? { colSpan: 2 } : {}),
+              },
+              {
+                title: t("tableGuest"),
+                key: "tableGuest",
+                render: (_, record) => {
+                  if (record.type === "group") return null;
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  const tableNumber = payment.tableNumber;
+                  const guest = payment.guest;
+                  if (tableNumber) {
+                    return (
+                      <div className="space-y-1">
+                        <div className="font-semibold">{t("tableLabel", { number: tableNumber })}</div>
+                        {guest && (
+                          <div className="text-xs text-muted-foreground">
+                            {guest.name}{" "}
+                            <Badge variant="outline" className="text-xs">
+                              #{guest.id}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  if (guest) {
+                    return (
+                      <div className="space-y-1">
+                        <div className="font-semibold">{guest.name}</div>
+                        <Badge variant="outline" className="text-xs">
+                          #{guest.id}
+                        </Badge>
+                      </div>
+                    );
+                  }
+                  return <span className="text-muted-foreground">-</span>;
+                },
+                onCell: (record) => (record.type === "group" ? { colSpan: 0 } : {}),
+              },
+              {
+                title: t("totalAmount"),
+                key: "totalAmount",
+                render: (_, record) => {
+                  if (record.type === "group") {
+                    return (
+                      <div className="text-sm font-semibold text-orange-600">
+                        {formatCurrency(record.totalAmountGroup || 0)}
+                      </div>
+                    );
+                  }
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  return (
+                    <div className="font-semibold text-orange-600">{formatCurrency(payment.totalAmount)}</div>
+                  );
+                },
+              },
+              {
+                title: t("paymentMethod"),
+                key: "paymentMethod",
+                render: (_, record) => {
+                  if (record.type === "group") return null;
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  return <div className="text-sm">{getPaymentMethodLabel(payment.paymentMethod, t)}</div>;
+                },
+                onCell: (record) => (record.type === "group" ? { colSpan: 0 } : {}),
+              },
+              {
+                title: t("status"),
+                key: "status",
+                render: (_, record) => {
+                  if (record.type === "group") return null;
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  return (
+                    <Badge className={getPaymentStatusColor(payment.status)}>
+                      {getVietnamesePaymentStatus(payment.status, t)}
+                    </Badge>
+                  );
+                },
+                onCell: (record) => (record.type === "group" ? { colSpan: 0 } : {}),
+              },
+              {
+                title: t("orders"),
+                key: "orders",
+                render: (_, record) => {
+                  if (record.type === "group") return null;
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  const totalQuantity = payment.orders.reduce((acc, order) => acc + order.quantity, 0);
+                  return (
+                    <div className="text-left">
+                      <div className="font-semibold">{t("orderCount", { count: payment.orders.length })}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {t("itemCount", { count: totalQuantity })}
+                      </div>
+                    </div>
+                  );
+                },
+                onCell: (record) => (record.type === "group" ? { colSpan: 0 } : {}),
+              },
+              {
+                title: t("createdBy"),
+                key: "createdBy",
+                render: (_, record) => {
+                  if (record.type === "group") return null;
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  return (
+                    <div className="text-sm">
+                      <div>{payment.createdBy.name}</div>
+                      <div className="text-xs text-muted-foreground">#{payment.createdBy.id}</div>
+                    </div>
+                  );
+                },
+                onCell: (record) => (record.type === "group" ? { colSpan: 0 } : {}),
+              },
+              {
+                title: t("createdAt"),
+                key: "createdAt",
+                render: (_, record) => {
+                  if (record.type === "group") return null;
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  return (
+                    <div className="text-xs whitespace-nowrap">
+                      {formatDateTimeToLocaleString(payment.createdAt)}
+                    </div>
+                  );
+                },
+                onCell: (record) => (record.type === "group" ? { colSpan: 0 } : {}),
+              },
+              {
+                title: t("note"),
+                key: "note",
+                render: (_, record) => {
+                  if (record.type === "group") return null;
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  return (
+                    <div className="max-w-50 truncate text-xs text-muted-foreground">
+                      {payment.note || "-"}
+                    </div>
+                  );
+                },
+                onCell: (record) => (record.type === "group" ? { colSpan: 0 } : {}),
+              },
+              {
+                title: t("actions"),
+                key: "actions",
+                render: (_, record) => {
+                  if (record.type === "group") return null;
+                  const payment = record.payment;
+                  if (!payment) return null;
+                  return (
+                    <button
+                      onClick={() => setPaymentIdEdit(payment.id)}
+                      className="bg-blue-500 px-2 py-1 rounded-lg hover:bg-blue-400 text-white text-sm"
+                    >
+                      {t("detail")}
+                    </button>
+                  );
+                },
+                onCell: (record) => (record.type === "group" ? { colSpan: 0 } : {}),
+              },
+            ]}
+            dataSource={Object.entries(paymentGroups)
               .sort(([, paymentsA], [, paymentsB]) => {
                 const maxA = Math.max(...paymentsA.map((p) => new Date(p.createdAt).getTime()));
-                // lấy time tạo lớn nhất trong 1 group để sort các group
                 const maxB = Math.max(...paymentsB.map((p) => new Date(p.createdAt).getTime()));
-                return maxB - maxA; // mới nhất lên đầu
+                return maxB - maxA;
               })
-              .map(([groupId, payments]) => {
+              .flatMap(([groupId, payments]) => {
+                const rows: PaymentRow[] = [];
                 const totalAmountGroup = payments.reduce((acc, payment) => acc + payment.totalAmount, 0);
-                return (
-                  <div key={groupId}>
-                    {groupId !== "no-group" && (
-                      <div
-                        className={`grid grid-cols-10 gap-2 items-center pl-2 py-2 border-l-4 ${getGroupColor(Number(groupId))}`}
-                      >
-                        <div className="col-span-1 text-sm">{t("billGroup", { id: groupId })}</div>
-                        <div className="col-span-1 text-sm"> </div>
-                        <div className="col-span-1 text-sm font-semibold text-orange-600">
-                          {formatCurrency(totalAmountGroup)}
-                        </div>
-                      </div>
-                    )}
-
-                    {payments.map((payment: PaymentItemType, index: number) => (
-                      <PaymentItem
-                        data={payment}
-                        paymentGroups={paymentGroups}
-                        key={payment.id}
-                        indexForGroup={index + 1}
-                      />
-                    ))}
-                  </div>
-                );
+                if (groupId !== "no-group") {
+                  rows.push({
+                    key: `group-${groupId}`,
+                    type: "group",
+                    groupId,
+                    totalAmountGroup,
+                  });
+                }
+                const groupSize = payments.length;
+                payments.forEach((payment, index) => {
+                  const groupColor = payment.paymentGroup
+                    ? getGroupColor(payment.paymentGroup.id)
+                    : undefined;
+                  rows.push({
+                    key: `payment-${payment.id}`,
+                    type: "item",
+                    payment,
+                    indexForGroup: index + 1,
+                    isGrouped: Boolean(payment.paymentGroup && groupSize > 1),
+                    groupColor,
+                  });
+                });
+                return rows;
               })}
+          />
         </div>
         <div className="flex items-center justify-end space-x-2 py-4">
           <div className="text-xs text-muted-foreground py-4 flex-1 ">
